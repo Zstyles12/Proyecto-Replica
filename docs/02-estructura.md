@@ -1,118 +1,117 @@
 # Estructura — Web
 
-> Adaptado de la estructura de la app móvil. Cada decisión de producto (qué hace cada pantalla, qué reglas aplican) se mantiene idéntica; lo que cambia es la tecnología usada para lograrlo. Donde la app usa un módulo nativo sin equivalente directo en el navegador, se explica la alternativa y su limitación.
+> La web es la misma Replica que la app, adaptada a escritorio. Las reglas de producto y de diseño son las de la app (`DESIGN.md` y `PRODUCT.md`, copias exactas). Lo que la web hace distinto a propósito está en `DESIGN-WEB.md`. Aquí va **con qué se arma la web y cómo se organiza**.
+>
+> La app de referencia vive en `../replica mobile/zairo` (repo `ManuelGoncalvesR/zairo`). **Solo se lee, nunca se modifica.** Su `docs/02-estructura.md` describe cada pantalla con detalle: ante una duda de comportamiento, manda la app.
 
 ## Con qué se arma
 
-| Parte | Tecnología (app, referencia) | Equivalente web |
+| Parte | En la app (referencia) | En la web |
 |---|---|---|
-| Framework | Expo Router | React + React Router |
-| Estilos | NativeWind (Tailwind) | Tailwind CSS directo, con los tokens de color de `DESIGN.md` (sección 3.3, ya en variables CSS) |
-| Componentes base | React Native Reusables | shadcn/ui (misma filosofía: código propio en `components/ui`, no una librería cerrada) |
-| Animación | Reanimated + Gesture Handler | CSS transitions/keyframes + Framer Motion para lo que lo necesite (respetando los tokens de `theme/motion.ts` como referencia de duraciones) |
-| Efectos y gráficas (aura, hilos, tela) | Skia + react-native-svg | SVG nativo del navegador + Canvas API para el aura que respira; sin librería adicional necesaria |
+| Framework | Expo Router | React 19 + Vite + React Router 7 |
+| Lenguaje | TypeScript estricto | TypeScript estricto (`"strict": true`) |
+| Estilos | NativeWind (Tailwind 3), colores en `theme/colors.ts` | Tailwind 3, colores como variables CSS en `src/index.css` con los valores de `DESIGN.md` §3.3; el config debe aceptar opacidad sobre los tokens (`DESIGN-WEB.md` §7) |
+| Componentes base | React Native Reusables | Componentes propios en `components/ui` (sin librería de componentes) |
+| Animación | Reanimated 4 | Transiciones y `@keyframes` de CSS con los tokens de `DESIGN.md` §7; `requestAnimationFrame` solo donde haga falta (la planta de la bienvenida) |
+| Efectos y gráficas | Skia y react-native-svg | SVG del navegador |
 | Iconos | lucide-react-native | lucide-react |
-| Sensación "nativa" (blur, bottom sheet) | expo-blur, @gorhom/bottom-sheet | `backdrop-filter: blur()` (CSS) y un componente de drawer/hoja inferior propio o `vaul` |
-| Listas | FlatList / FlashList | Renderizado normal; virtualizar solo si una lista real supera cientos de elementos (`@tanstack/react-virtual`) |
-| Base de datos y usuarios | Supabase | **Mismo proyecto de Supabase**, misma base de datos y mismas reglas de acceso — ver `03-base-de-datos.md` |
-| Chat en tiempo real | Supabase Realtime | Igual, vía el cliente JS de Supabase |
-| Archivos | Supabase Storage | Igual |
-| Lógica del servidor | Supabase Edge Functions | Igual — las mismas funciones (`generate-reply`, `generate-day-reply`) las consume tanto la app como la web |
-| Diario sin conexión | expo-sqlite + sync | IndexedDB (vía Dexie.js) + Service Worker, sincroniza al volver la conexión. Prioridad menor que en la app (la web se usa más con conexión estable), pero no se descarta para v1 si el tiempo alcanza |
-| Dictado por voz | expo-speech-recognition | **Web Speech API** (`SpeechRecognition`) — soportada en Chrome/Edge; **no disponible en Safari/iOS**. Debe degradar a "sin dictado, solo texto" sin romper la pantalla cuando el navegador no lo soporte |
-| Bloqueo de la app | expo-local-authentication (Face ID/huella) | **WebAuthn (Passkeys)** donde el dispositivo lo soporte; si no, un PIN simple guardado solo en el cliente. Es una paridad más débil que en la app — comunícalo con honestidad en el copy, nunca prometas "biometría" si en ese navegador cae a PIN |
-| Notificaciones | expo-notifications | **Web Push API**, requiere HTTPS, permiso explícito del usuario y Service Worker registrado |
-| Sesiones por video | Links de Google Meet | Igual, sin cambios |
+| Estado | Stores propios con `useSyncExternalStore` | Lo mismo: stores pequeños en TypeScript puro, con `useSyncExternalStore` |
+| Guardado local | expo-sqlite (kv-store) | `localStorage` mientras todo es simulado; IndexedDB cuando llegue el guardado sin conexión |
+| Base de datos y usuarios | Supabase | **El mismo proyecto de Supabase**, mismas tablas y reglas (`03-base-de-datos.md`) |
+| Lógica del servidor e IA | Edge Functions `generate-reply` y `generate-day-reply` | Las mismas; la web nunca llama a Gemini directamente |
+| Dictado | expo-speech-recognition | Web Speech API (Chrome y Edge); sin soporte, no hay micrófono |
+| Bloqueo | Face ID o huella | Fuera de la v1 web |
+| Notificaciones | expo-notifications | Web Push (Etapa B); antes, el recordatorio no se ofrece |
+| Sesiones por video | Links de Google Meet | Igual |
 
-## Autenticación (reemplaza por completo lo construido hasta ahora)
+## Antes de la app: bienvenida, cuenta y configuración
 
-**Importante:** el flujo de Login/Registro con email + contraseña construido antes de este documento queda descartado. El flujo real, definido por el equipo de app, es:
+Cada etapa solo ve sus pantallas. Igual que `lib/session.ts` de la app: la sesión guarda la cuenta, el consentimiento (con su `TERMS_VERSION`) y si terminó la configuración, y de eso sale la etapa: `auth` → `consent` → `setup` → `app`. Las rutas de una etapa que no corresponde redirigen a la que sí.
 
-1. **Bienvenida** — páginas cortas de introducción (equivalente web de las 3 páginas tejidas), con "Crear mi cuenta" y "Ya tengo cuenta" visibles en todas.
-2. **Entrar/Crear cuenta** — mismo camino para ambos casos, sin contraseña:
-   - Apple (si el navegador/dispositivo lo soporta vía Sign in with Apple for Web),
-   - Google (OAuth),
-   - Correo con código de 6 dígitos (Supabase Auth OTP por email). El código se verifica automáticamente al completar el sexto dígito; reenvío disponible a los 60 segundos.
-3. **Consentimiento** — qué hace Replica con lo escrito, y tres casillas: 18+, términos y privacidad, y que una IA lee las notas para responder. Se vuelve a pedir si cambia `TERMS_VERSION`.
-4. **Configuración** — nombre (obligatorio; Google/Apple lo traen prellenado), qué te trae a Replica, tono de la réplica, recordatorio, y bloqueo (WebAuthn/PIN) si el navegador lo soporta.
-5. **Listo** — anima la marca y lleva a la primera nota.
+1. **Bienvenida** (`/bienvenida`): tres páginas con la planta que crece. "Crear mi cuenta" y "Ya tengo cuenta" en todas.
+2. **Cuenta**: Apple, Google o correo y contraseña (mínimo **8** caracteres, con botón para verla).
+   - **Crear:** `/entrar` → `/correo` → `/contrasena` (crea una) → `/codigo` (6 dígitos que confirman el correo).
+   - **Entrar:** `/entrar?modo=entrar` → `/correo` → `/contrasena`.
+   - **¿Olvidaste tu contraseña?:** código al correo → contraseña nueva → adentro.
+   - El código se verifica solo al escribir el sexto dígito, se puede reenviar a los 60 s y "Cambiar correo" vuelve atrás.
+3. **Consentimiento** (`/consentimiento`): las cuatro promesas de la app y tres casillas (18 años o más; términos y privacidad, con enlaces a `/legal/terminos` y `/legal/privacidad`; una IA lee las notas). Si cambia `TERMS_VERSION`, se vuelve a pedir.
+4. **Configuración** (`/configurar`): un paso por pantalla. Nombre (obligatorio; Apple o Google lo traen), qué te trae (6 opciones con ícono, se puede omitir), tono (suave, profundo o directo) y hora de la réplica del día (20:00 o 22:00).
+5. **Listo** (`/listo`): "Todo listo, {nombre}", la marca se teje y lleva a la primera nota.
 
-Quien ya tiene cuenta configurada entra directo a la app. Hasta que Supabase Auth esté conectado, todo se simula igual que en la app: cualquier código de 6 dígitos entra, `000000` simula uno incorrecto.
+Quien entra con una cuenta que ya existía va directo a la app. Hasta que exista Supabase todo es simulado (`services/auth`), con el mismo contrato que la app (`services/auth/types.ts`): cualquier código de 6 dígitos entra y `000000` simula uno equivocado; cualquier contraseña de 8 o más entra y `equivocada` simula una incorrecta.
 
-## Diseño
+## Rutas
 
-**Ver `DESIGN.md` — es la fuente de verdad completa y no se duplica aquí.** Ese documento ya está escrito explícitamente para quien construye la web (incluida una IA como el agente de Antigravity). Antes de escribir un solo componente nuevo, léelo entero: dirección visual "Telar", los 20 tokens de color con sus dos temas, tipografía (Alegreya / Alegreya Sans), las 7 reglas de movimiento y el vocabulario obligatorio.
-
-Los mockups de referencia visual de la app viven en `design-reference/` (nombre provisional "Serena") — se sigue su composición y jerarquía, no se copian funciones fuera de alcance.
-
-## Navegación — 5 secciones
-
-La app usa 5 pestañas nativas; en web, la forma natural de representarlas depende del ancho de pantalla:
-
-- **Desktop/tablet ancho:** barra lateral o superior fija con las 5 secciones.
-- **Mobile web:** barra inferior fija, visualmente equivalente a la tab bar de la app (mismo hilo indicador de pestaña activa que describe `DESIGN.md`).
-
-Rutas sugeridas (React Router):
-
-| Sección | Ruta | Pantalla nativa equivalente |
+| Ruta | Pantalla | En la app |
 |---|---|---|
-| Inicio | `/` | Inicio |
-| Notas | `/notas`, `/notas/:day` | Notas, "Tu día" |
-| Evolución | `/evolucion` | Evolución |
-| Chat | `/chat` | Chat |
-| Usuario | `/usuario` | Usuario |
+| `/bienvenida`, `/entrar`, `/correo`, `/contrasena`, `/codigo` | Registro y cuenta | `app/(auth)/*` |
+| `/consentimiento`, `/configurar`, `/listo` | Primera configuración | `app/(setup)/*` |
+| `/` | Inicio | `app/(tabs)/index.tsx` |
+| `/notas` | Notas | `app/(tabs)/notas/index.tsx` |
+| `/notas/:id` | Detalle de una nota | `app/(tabs)/notas/[id].tsx` |
+| `/replica-dia/:dia` | Tu día | `app/replica-dia/[day].tsx` |
+| `/evolucion` | Evolución | `app/(tabs)/evolucion/index.tsx` |
+| `/chat` | Conversación (o el estado vacío si no hay psicólogo) | `app/(tabs)/chat`, `app/conversacion.tsx` |
+| `/chat/directorio` | Directorio de psicólogos | `app/(tabs)/chat/directorio.tsx` |
+| `/psicologo/:id` | Perfil de un psicólogo | `app/psicologo/[id].tsx` |
+| `/usuario` | Usuario | `app/(tabs)/usuario/index.tsx` |
+| `/usuario/psicologo` | Soy psicólogo o psicóloga | `app/(tabs)/usuario/psicologo.tsx` |
+| `/cofre` | Mi cofre | `app/cofre.tsx` |
+| `/legal/:doc` | Términos o Privacidad | `app/legal/[doc].tsx` |
+| `/playground` | Componentes base (solo en desarrollo) | `app/playground.tsx` |
 
-## Pantallas (mismas reglas de producto que la app, ver `DESIGN.md` sección 10 y 11 para el detalle completo)
+Compartir el diario, compartir una frase como imagen y editar el perfil son hojas o ventanas (`DESIGN-WEB.md` §5), no rutas.
 
-### 1. Inicio
-Fecha y racha; saludo con acceso al cofre; ánimo y tema como pastillas obligatorias antes de pedir la réplica (con las mismas preguntas amables de Replica si faltan, nunca error); la hoja de escribir con dictado (si el navegador lo soporta) y botón Replica; al guardar, la nota se pliega y la réplica se escribe progresivamente (streaming); dos frases del cofre del día; notas recientes.
+## Pantallas
 
-### 2. Notas
-Lista agrupada por día, con la réplica del día como entrada propia arriba de las notas de ese día; búsqueda (sin tildes); filtros por ánimo y tema; favoritas. Detalle de nota con réplica, entrada plegable y comentario de la réplica del día si aplica. "Tu día" como vista propia.
+Hacen lo mismo que en la app: el detalle está en `DESIGN.md` §10 y §11 y en `docs/02-estructura.md` de la app. Lo esencial que la web tiene que respetar:
 
-### 3. Evolución
-Curva de ánimo por semana/mes/año; temas y patrones calculados; cofre de aprendizajes completo; palabras y notas del mes; la "tela" de constancia (mismo concepto visual que en la app, adaptado a SVG/CSS en vez de Skia).
+- **Inicio:** se escribe sin límite; **solo la primera nota no privada del día recibe su réplica al momento** (botón "Replica"); las demás se guardan ("Guardar") y las lee la réplica del día a la hora elegida, que les deja un comentario a cada una. Si se escribe después de esa, a medianoche llega una última réplica. Bajo el saludo, una sola línea dice cuándo llega, que se está leyendo o que llegó. Ánimo y un tema son necesarios: si faltan, Replica los pregunta con su voz y sigue sola al tenerlos. Cada réplica deja una frase destilada que se puede guardar en el cofre.
+- **Notas:** lista por día con la réplica de cada día arriba; búsqueda sin tildes (también en el texto de la réplica); "Todas / Favoritas" y "Filtrar" por ánimo y tema (solo los que existen en tus notas). Detalle y "Tu día" como páginas.
+- **Evolución:** curva y barras por semana, mes o año; temas y patrones; tu escritura en números; tu tela.
+- **Chat:** un psicólogo a la vez; las sesiones las agenda el psicólogo; compartir el diario con una hoja que explica qué significa; para cambiar de psicólogo, primero se termina el proceso (con confirmación), lo que deja de compartir el diario.
+- **Usuario:** ficha, métricas de 30 días, tus favoritas, ajustes plegables (Tu réplica, Tu espacio privado, Apariencia), tu cuenta (cerrar sesión, eliminar cuenta), "Soy psicólogo o psicóloga", "Ver los tutoriales otra vez", Términos y Privacidad.
 
-### 4. Chat
-Un psicólogo a la vez; conversación en tiempo real vía Supabase Realtime; franja de próxima sesión con "Unirse por Meet"; compartir/retirar el diario con consentimiento explícito. Sin psicólogo asignado, muestra el directorio.
+## Datos mientras no hay backend
 
-### 5. Usuario
-Ficha con foto, nombre, frase propia y antigüedad; métricas de 30 días (todas calculables); ajustes en tarjetas plegables (Tu réplica, Tu espacio privado, Apariencia); apartado de registro profesional para psicólogos; cerrar sesión / eliminar cuenta.
+- Los datos simulados siguen **el modelo de la app** (`features/*/store.ts`, `features/journal/types.ts`, `services/ai`), que es el que ya está probado y se va a mapear a las tablas de `03-base-de-datos.md` en la Etapa B.
+- **Los días se cuentan en hora local** (`dayKey`), nunca con `toISOString().slice(0, 10)`: en Venezuela (UTC−4) eso mueve al día siguiente todo lo escrito después de las 20:00.
+- Cada servicio simulado tiene el mismo contrato que tendrá con Supabase, para reemplazarlo sin tocar las pantallas.
+- Cerrar sesión no borra el diario; eliminar la cuenta borra todo (notas, réplicas, frases, conversaciones y perfil).
 
 ## Recorridos (tutoriales)
 
-Primera vez que se entra a cada pantalla, un recorrido corto explica lo esencial en una línea, con "Siguiente" y "Saltar todo". Equivalente web: una librería ligera de spotlight/tour (ej. `driver.js` o una implementación propia con un overlay + `position: fixed`), repetible desde Usuario → "Ver los tutoriales otra vez".
+Los mismos pasos y textos que la app (`lib/tutorials.ts` de la app): Inicio, racha, primera réplica, Notas, Evolución, Chat y Usuario. Pantalla oscurecida con el elemento recortado, una línea de texto, "Saltar todo", "1 de 5" y "Siguiente". `Escape` lo cierra. Se repiten desde Usuario → "Ver los tutoriales otra vez".
 
 ## Sonidos
 
-Misma familia sonora generada por el equipo de app (`assets/sounds/`), reproducida con `<audio>` nativo del navegador. En web, **deben estar apagados por defecto** o con un interruptor visible antes de sonar — los navegadores además bloquean autoplay de audio sin interacción previa del usuario, así que el primer sonido debe dispararse solo tras una acción explícita (tocar Replica, enviar un mensaje).
+La misma familia que la app, en `public/sounds/`. **Apagados por defecto** en la web; se activan en Usuario → Apariencia o con el botón de la bienvenida. No se descargan hasta que se activan (pesan 1,2 MB). Suenan y callan en los mismos momentos que en la app (`DESIGN.md` §8).
 
-## Consideraciones específicas de navegador (equivalente a la sección "Android" de la app)
+## Navegadores
 
-- **Dictado por voz:** solo Chrome/Edge (Web Speech API). Detectar soporte y ocultar el botón de dictado con gracia si no está disponible, no mostrar un botón roto.
-- **WebAuthn/Passkeys:** requiere HTTPS y soporte del dispositivo. Si falla, cae a PIN local — nunca a "sin bloqueo" silencioso.
-- **Notificaciones push:** requieren HTTPS, Service Worker y permiso explícito; Safari en iOS solo las soporta si la web está instalada como PWA en pantalla de inicio — comunicarlo si es relevante para el público objetivo.
-- **Offline:** IndexedDB + Service Worker para guardar notas sin conexión; sincronizar al reconectar, igual que expo-sqlite en la app.
-- **Pruebas cruzadas obligatorias antes de cada entrega:** Chrome de escritorio, Safari de escritorio, Chrome Android, Safari iOS — en ese orden de prioridad según el público de Venezuela (mayoría Android).
+- Prioridad de pruebas (público mayormente con Android): Chrome Android, Chrome de escritorio, Safari iOS, Safari de escritorio y Firefox.
+- Dictado: solo Chrome y Edge. Sin soporte, no se muestra el micrófono.
+- Web Push y passkeys necesitan HTTPS; Safari en iOS solo tiene notificaciones si la web está instalada como PWA.
 
-## Estructura de carpetas (adaptada al patrón ya usado en `frontend/src/`)
+## Estructura de carpetas
 
 ```
 frontend/src/
-  pages/                 rutas (una por pantalla)
+  pages/                 una carpeta o archivo por ruta
   components/
-    ui/                  componentes base (shadcn/ui reestilizados con los tokens de DESIGN.md)
-    motion/              primitivas de movimiento propias (equivalente a las de la app)
-  features/              journal (diario/Inicio), notes, care (chat/psicólogos/sesiones), profile
-  hooks/                 hooks compartidos (use-theme, etc.)
-  lib/                   utilidades (sounds, session, keyboard)
-  services/              servicios reemplazables — hoy con datos simulados (ai/, auth/)
-  theme/                 colors.ts, fonts.ts, motion.ts — deben coincidir 1:1 con los tokens de DESIGN.md
-  design-reference/      mockups de referencia de la app (solo consulta, no se implementan directo)
+    ui/                  piezas base (botón, tarjeta, pastilla, ventana, segmentado…)
+    motion/              primitivas de movimiento (corazón, entrada, texto palabra por palabra…)
+    layout/              barra lateral, barra inferior y layout principal
+    brand/               marca, cofre, planta de la racha, bienvenida
+  features/              por función: auth, journal (Inicio), notes, care (chat), cofre, profile, evolution
+  data/                  textos de cada pantalla (*Content.ts): fuente del copy
+  hooks/                 hooks compartidos (tema, movimiento reducido…)
+  lib/                   utilidades (sesión, fechas, sonidos, almacenamiento, recorridos)
+  services/              servicios reemplazables, hoy simulados (auth, ai)
 ```
 
-Cuando llegue el backend real se suman `lib/supabase/` y `lib/offline/`.
+Cuando llegue el backend se suman `lib/supabase/` y `lib/offline/`.
 
 ## Fuera de la v1
 
-Igual que la app: sin chat con la IA, sin pantalla de ayuda en crisis dedicada (más allá de la derivación dentro de la réplica), sin exportar notas.
+Lo mismo que la app (chat con la IA, pantalla de crisis, exportar notas, pagos, planes, videollamadas propias) y, solo en la web: el bloqueo del diario y compartir una nota suelta en el chat.

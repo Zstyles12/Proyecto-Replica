@@ -34,7 +34,7 @@ Replica es una app de salud mental con dos partes:
 
 - **Equipo:** el proyecto se divide en dos frentes que comparten un solo backend en Supabase:
   - **App móvil** (React Native / Expo) — desarrollada por el equipo de app.
-  - **Web** (React + Tailwind) — desarrollada de forma independiente, siguiendo estrictamente `DESIGN.md` y `03-base-de-datos.md` como fuentes de verdad compartidas, para que ambos productos se sientan como uno solo.
+  - **Web** (React + Tailwind) — una adaptación de la app pensada para que también sea agradable en escritorio. Sigue `DESIGN.md` y `PRODUCT.md` (copias exactas de los de la app) y `03-base-de-datos.md` como fuentes de verdad compartidas; lo que cambia a propósito en escritorio está en `DESIGN-WEB.md`. La app de referencia vive en `../replica mobile/zairo` y solo se usa para comparar.
 - Cualquier cambio a la base de datos compartida debe coordinarse entre ambos frentes antes de aplicarse (ver sección de coordinación en `03-base-de-datos.md`).
 - Pensado desde **Venezuela**: conexión inestable, mayoría de usuarios en Android/navegadores móviles, pagos locales limitados. La web debe degradar con gracia ante conexión lenta o intermitente (ver notas de soporte offline en `02-estructura.md`).
 - Mercado todavía **no validado**: la primera versión sirve para medir si la gente vuelve a escribir y si los psicólogos la usan — la web debe priorizar llegar rápido a una versión usable sobre pulir funciones fuera de alcance.
