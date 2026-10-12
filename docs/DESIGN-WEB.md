@@ -45,7 +45,7 @@ La web es **la misma Replica**, no otro producto. En el teléfono (menos de 768 
 
 ### Notas
 - Columna principal: título, búsqueda, "Todas / Favoritas" y "Filtrar", y la lista por día con la réplica de cada día arriba de sus notas.
-- **Panel derecho (1024 px o más):** opcional, solo con datos reales y sin números como insignia (por ejemplo, notas y palabras del mes, y un enlace para escribir). No duplica filtros que ya están en la lista.
+- **Panel derecho (1024 px o más):** "Últimos 30 días" con notas y palabras (datos reales, sin insignias) y el botón "Escribir". No duplica filtros que ya están en la lista.
 - **El detalle de una nota y "Tu día" son páginas con su ruta**, no ventanas: `/notas/:id` y `/replica-dia/:dia`. Funcionan el botón atrás y los enlaces directos. En escritorio usan la columna de lectura.
 
 ### Evolución
@@ -54,7 +54,7 @@ La web es **la misma Replica**, no otro producto. En el teléfono (menos de 768 
 
 ### Chat
 - **1024 px o más:** a la izquierda (340 px) la ficha del psicólogo, la próxima sesión con "Unirse por Meet" y el estado del diario compartido; a la derecha la conversación, a la altura de la ventana.
-- **Menos de 1024 px:** la conversación a pantalla completa y sin barra de navegación, como en la app; la ficha se abre desde la cabecera (`/psicologo/:id`).
+- **Menos de 1024 px:** la conversación ocupa toda la columna, con su cabecera (volver, el psicólogo y el diario compartido); la ficha se abre desde la cabecera (`/psicologo/:id`). En el teléfono (menos de 768 px) va a pantalla completa y sin barra inferior, como en la app; entre 768 y 1023 px la barra lateral sigue a la vista.
 - Sin psicólogo: el estado vacío de la app ("Aquí hablarás con tu psicólogo") y el directorio (`/chat/directorio`), con filtro por especialidad.
 
 ### Usuario

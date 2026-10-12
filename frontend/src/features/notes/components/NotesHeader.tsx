@@ -1,59 +1,60 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Search, X } from "lucide-react";
-import { NOTAS_CONTENT } from "../../../data/notasContent";
 
-interface NotesHeaderProps {
+/**
+ * El título de Notas y su búsqueda comparten la misma fila (features/notes/components/notes-header.tsx
+ * de la app): al buscar, el campo toma el lugar del título y la lista de abajo no se mueve. Escape la
+ * cierra.
+ */
+export const NotesHeader: React.FC<{
   query: string;
   onQueryChange: (q: string) => void;
-}
+  searching: boolean;
+  onSearchingChange: (searching: boolean) => void;
+}> = ({ query, onQueryChange, searching, onSearchingChange }) => {
+  const inputRef = useRef<HTMLInputElement>(null);
 
-export const NotesHeader: React.FC<NotesHeaderProps> = ({
-  query,
-  onQueryChange,
-}) => {
-  const { header, search } = NOTAS_CONTENT;
+  useEffect(() => {
+    if (searching) inputRef.current?.focus();
+  }, [searching]);
+
+  const close = () => {
+    onQueryChange("");
+    onSearchingChange(false);
+  };
 
   return (
-    <div className="space-y-4">
-      {/* Título de sección */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-replica text-3xl md:text-4xl font-normal tracking-tight text-foreground">
-            {header.title}
-          </h1>
-          <p className="font-voice text-sm md:text-base text-muted-foreground mt-1">
-            {header.description}
-          </p>
+    <div className="flex h-12 items-center gap-2">
+      {searching ? (
+        <div className="enter flex h-12 flex-1 items-center rounded-full border border-border/40 bg-surface-raised pl-4 pr-1 shadow-xs focus-within:ring-2 focus-within:ring-voice/40">
+          <Search size={17} className="shrink-0 text-muted-foreground" aria-hidden="true" />
+          <label htmlFor="notes-search" className="sr-only">
+            Buscar en tus notas y réplicas
+          </label>
+          <input
+            ref={inputRef}
+            id="notes-search"
+            type="search"
+            value={query}
+            onChange={(e) => onQueryChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") close();
+            }}
+            placeholder="Buscar en tus notas y réplicas"
+            className="h-full min-w-0 flex-1 bg-transparent px-3 text-base text-foreground placeholder:text-subtle focus:outline-none [&::-webkit-search-cancel-button]:hidden"
+          />
         </div>
-      </div>
-
-      {/* Barra de búsqueda interactiva */}
-      <div className="relative flex items-center">
-        <Search
-          size={16}
-          className="absolute left-3.5 text-muted-foreground pointer-events-none"
-        />
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
-          placeholder={search.placeholder}
-          aria-label={search.inputAria}
-          className="w-full h-11 pl-10 pr-10 rounded-full bg-surface-raised border border-border/40 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-voice/50 focus:border-voice transition-all shadow-xs"
-        />
-        {query && (
-          <button
-            type="button"
-            onClick={() => onQueryChange("")}
-            aria-label={search.clearAria}
-            className="absolute right-3.5 p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-surface transition-colors"
-          >
-            <X size={14} />
-          </button>
-        )}
-      </div>
+      ) : (
+        <h1 className="flex-1 font-replica text-[28px] font-normal leading-[34px] tracking-[-0.3px] text-foreground">Notas</h1>
+      )}
+      <button
+        type="button"
+        onClick={searching ? close : () => onSearchingChange(true)}
+        aria-label={searching ? "Cerrar la búsqueda" : "Buscar en tus notas"}
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface text-foreground transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice"
+      >
+        {searching ? <X size={19} aria-hidden="true" /> : <Search size={19} aria-hidden="true" />}
+      </button>
     </div>
   );
 };
-
-export default NotesHeader;

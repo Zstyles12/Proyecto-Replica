@@ -4,11 +4,6 @@ export interface PeriodOption {
 }
 
 export const EVOLUCION_CONTENT = {
-  header: {
-    title: "Evolución",
-    description: "Cómo te sentiste en el tiempo, qué se repite en tus notas, tu cofre y tu constancia.",
-    stepBadge: "Paso 7",
-  },
   periods: [
     { value: "semana", label: "Esta semana" },
     { value: "mes", label: "Este mes" },
@@ -31,9 +26,9 @@ export const EVOLUCION_CONTENT = {
     tooltipPrevalent: "sobre todo",
     emptyNotice: "Escribe notas con tu ánimo elegido para ver tu curva emocional.",
     instructions: {
-      semana: "Desliza el ratón sobre la curva para ver cada día.",
-      mes: "Desliza el ratón sobre la curva para ver cada semana.",
-      ano: "Desliza el ratón sobre la curva para ver cada mes.",
+      semana: "Pasa el cursor o toca la curva para ver cada día.",
+      mes: "Pasa el cursor o toca la curva para ver cada semana.",
+      ano: "Pasa el cursor o toca la curva para ver cada mes.",
     },
   },
   moodBars: {
@@ -49,13 +44,6 @@ export const EVOLUCION_CONTENT = {
     emptyDescription: "Cuando uses temas y elijas tu ánimo en varias notas, aquí verás qué se repite.",
     footnote: "Calculado a partir de tus temas y ánimos reales.",
   },
-  chest: {
-    title: "Cofre de aprendizajes",
-    badge: "Frases destiladas",
-    openButton: "Abrir cofre",
-    emptyTitle: "Tu cofre está esperando",
-    emptyDescription: "Escribe una nota y pide la réplica: la frase que destile llegará aquí.",
-  },
   writing: {
     wordsWritten: "palabras escritas",
     notesPrefix: "notas en los últimos",
@@ -64,7 +52,7 @@ export const EVOLUCION_CONTENT = {
   },
   cloth: {
     title: "Tu tela",
-    subtitle: "84 días de constancia · La pasada del hilo sin penalizaciones",
+    subtitle: "Cada día que escribiste queda tejido. Un día sin escribir es hilo sin tejer, nada más.",
     tooltipNoNotes: "sin notas",
     tooltipOneNote: "1 nota",
     tooltipMultipleNotes: "notas",

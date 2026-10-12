@@ -5,6 +5,13 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Replica</title>
+    <script>
+      // El tema guardado se aplica antes del primer dibujo para que no parpadee (hooks/useTheme.ts).
+      try {
+        var theme = localStorage.getItem("replica-theme");
+        if (theme === "light" || theme === "dark") document.documentElement.setAttribute("data-theme", theme);
+      } catch (e) {}
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500&family=Alegreya:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">

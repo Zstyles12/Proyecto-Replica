@@ -1,286 +1,224 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ChevronDown, Hash } from "lucide-react";
-import { INICIO_CONTENT } from "../../../data/inicioContent";
-import { PLAYGROUND_CONTENT } from "../../../data/playgroundContent";
+import { MOOD_LABELS, MOODS, SUGGESTED_TAGS, moodColor, type Mood } from "../moods";
+
+type Panel = "mood" | "tag" | null;
 
 interface ContextPillsProps {
-  selectedMood: string | null;
-  selectedTag: string | null;
-  onSelectMood: (mood: string | null) => void;
-  onSelectTag: (tag: string | null) => void;
+  mood: Mood | null;
+  onMoodChange: (mood: Mood | null) => void;
+  tag: string | null;
+  onTagChange: (tag: string | null) => void;
+  // Sube cada vez que se pide la réplica sin haber elegido los dos: abre el que falta y pregunta.
+  askToken?: number;
+  // Para qué se piden: la réplica al momento o solo guardar.
+  purpose?: "reply" | "save";
+  tourRef?: React.Ref<HTMLDivElement>;
 }
 
+// Al elegir uno se abre el otro, un instante después (260 ms), para que se vea lo elegido.
+const ADVANCE_MS = 260;
+
 /**
- * Pastillas de contexto "¿Cómo te sientes?" y "¿Sobre qué?":
- * - Fidelidad 1:1 con la app móvil (zairo-main/features/journal/components/context-bar.tsx).
- * - Chevron con rotación suave de 180° al abrir/cerrar (duración 200 ms, ease-out).
- * - Paneles desplegables en línea (no popups abruptos) con animación colapsable fluida.
- * - Auto-avance inteligente de 260 ms: al elegir ánimo, si falta tema, avanza al tema; si ambos están listos, se pliega.
- * - Tintes sutiles según DESIGN.md: 13% de fondo y 40% de borde al estar activo.
+ * Cómo te sientes y sobre qué escribes: dos pastillas encima de la hoja
+ * (features/journal/components/context-bar.tsx de la app). Las dos son necesarias para guardar. Si
+ * falta alguna, Replica la pregunta con su voz (malva, itálica), nunca como error.
  */
 export const ContextPills: React.FC<ContextPillsProps> = ({
-  selectedMood,
-  selectedTag,
-  onSelectMood,
-  onSelectTag,
+  mood,
+  onMoodChange,
+  tag,
+  onTagChange,
+  askToken = 0,
+  purpose = "reply",
+  tourRef,
 }) => {
-  const [openMenu, setOpenMenu] = useState<"mood" | "tag" | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [panel, setPanel] = useState<Panel>(null);
+  const [pulse, setPulse] = useState({ mood: 0, tag: 0 });
+  // Si al pedir faltaba el ánimo, la segunda pregunta es "¿Y sobre qué es?".
+  const [askedMood, setAskedMood] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const panelId = React.useId();
 
-  const moods = PLAYGROUND_CONTENT.moods;
-  const themes = PLAYGROUND_CONTENT.themes;
-  const { contextPills } = INICIO_CONTENT;
+  const cancel = () => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+  };
+  useEffect(() => cancel, []);
 
-  const cancelTimer = () => {
-    if (closeTimerRef.current) {
-      clearTimeout(closeTimerRef.current);
-      closeTimerRef.current = null;
+  const missing: Panel = !mood ? "mood" : !tag ? "tag" : null;
+
+  // Cuando se pide la réplica sin los dos: se abre lo que falta y esa pastilla late.
+  const [lastAsk, setLastAsk] = useState(askToken);
+  if (askToken !== lastAsk) {
+    setLastAsk(askToken);
+    if (askToken) {
+      setPanel(missing);
+      setAskedMood(!mood);
+      setPulse((p) => ({ mood: !mood ? askToken : p.mood, tag: !tag ? askToken : p.tag }));
     }
+  }
+
+  const showHint = askToken > 0 && missing !== null;
+  const before = purpose === "reply" ? "Antes de responderte" : "Antes de guardarla";
+  const question =
+    missing === "mood" ? `${before}, ¿cómo te sientes?` : askedMood ? "¿Y sobre qué es?" : `${before}, ¿sobre qué es?`;
+
+  const toggle = (target: Exclude<Panel, null>) => {
+    cancel();
+    setPanel((p) => (p === target ? null : target));
   };
 
-  useEffect(() => {
-    return () => cancelTimer();
-  }, []);
-
-  // Cerrar al hacer clic fuera del componente
-  useEffect(() => {
-    const handleOutsideClick = (e: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
-        cancelTimer();
-        setOpenMenu(null);
-      }
-    };
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
-  }, []);
-
-  const toggleMenu = (target: "mood" | "tag") => {
-    cancelTimer();
-    setOpenMenu((prev) => (prev === target ? null : target));
+  const advance = (next: Panel) => {
+    cancel();
+    timer.current = setTimeout(() => setPanel(next), ADVANCE_MS);
   };
 
-  const handleSelectMood = (moodId: string) => {
-    cancelTimer();
-    const nextMood = selectedMood === moodId ? null : moodId;
-    onSelectMood(nextMood);
-    if (nextMood) {
-      // Auto-avance: si falta el tema, avanza al tema; si ambos están listos, se pliega (260 ms)
-      closeTimerRef.current = setTimeout(() => {
-        setOpenMenu(selectedTag ? null : "tag");
-      }, 260);
-    }
-  };
+  const pillClass = (active: boolean, open: boolean) =>
+    `inline-flex h-9 items-center gap-2 rounded-full border pl-3 pr-2.5 text-[13px] transition-all duration-small ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
+      active ? "font-medium text-foreground" : open ? "bg-surface text-foreground" : "text-muted-foreground hover:text-foreground"
+    }`;
 
-  const handleSelectTag = (tag: string) => {
-    cancelTimer();
-    const nextTag = selectedTag === tag ? null : tag;
-    onSelectTag(nextTag);
-    if (nextTag) {
-      // Auto-avance: si falta el ánimo, avanza al ánimo; si ambos están listos, se pliega (260 ms)
-      closeTimerRef.current = setTimeout(() => {
-        setOpenMenu(selectedMood ? null : "mood");
-      }, 260);
-    }
-  };
-
-  const currentMoodObj = moods.find((m) => m.id === selectedMood);
+  const tint = mood ? moodColor(mood) : null;
 
   return (
-    <div ref={containerRef} className="space-y-3 z-20">
-      {/* Fila principal de pastillas */}
-      <div className="flex flex-wrap items-center gap-2">
-        {/* 1. Pastilla "¿Cómo te sientes?" */}
+    <div className="space-y-2.5">
+      <div ref={tourRef} className="flex flex-wrap gap-2">
         <button
+          key={`mood-${pulse.mood}`}
           type="button"
-          aria-label={contextPills.moodAria}
-          aria-expanded={openMenu === "mood"}
-          onClick={() => toggleMenu("mood")}
-          style={{
-            backgroundColor: currentMoodObj
-              ? `color-mix(in srgb, ${currentMoodObj.colorVar} 13%, transparent)`
-              : openMenu === "mood"
-              ? "var(--surface)"
-              : "transparent",
-            borderColor: currentMoodObj
-              ? `color-mix(in srgb, ${currentMoodObj.colorVar} 40%, transparent)`
-              : "color-mix(in srgb, var(--border) 70%, transparent)",
-          }}
-          className={`inline-flex items-center gap-2 h-8 pl-2.5 pr-2 rounded-full text-[13px] font-normal cursor-pointer border select-none transition-all duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
-            currentMoodObj
-              ? "text-foreground font-medium shadow-xs"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
+          onClick={() => toggle("mood")}
+          aria-expanded={panel === "mood"}
+          aria-controls={panelId}
+          aria-label={mood ? `Cómo te sientes: ${MOOD_LABELS[mood]}` : "Elige cómo te sientes"}
+          className={`${pillClass(!!mood, panel === "mood")} ${pulse.mood ? "pill-pulse" : ""}`}
+          style={
+            tint
+              ? {
+                  backgroundColor: `color-mix(in srgb, ${tint} 13%, transparent)`,
+                  borderColor: `color-mix(in srgb, ${tint} 40%, transparent)`,
+                }
+              : { borderColor: "color-mix(in srgb, var(--border) 70%, transparent)" }
+          }
         >
-          {/* Aro del color del ánimo con punto central */}
           <span
-            className="w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 border-[1.5px] transition-colors"
-            style={{
-              borderColor: currentMoodObj
-                ? currentMoodObj.colorVar
-                : "color-mix(in srgb, var(--border) 90%, transparent)",
-            }}
+            aria-hidden="true"
+            className="flex h-3.5 w-3.5 items-center justify-center rounded-full border-[1.5px]"
+            style={{ borderColor: tint ?? "var(--subtle)" }}
           >
-            {currentMoodObj && (
-              <span
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ backgroundColor: currentMoodObj.colorVar }}
-              />
-            )}
+            {tint ? <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: tint }} /> : null}
           </span>
-          <span className="truncate">
-            {currentMoodObj ? currentMoodObj.name : contextPills.moodDefaultLabel}
-          </span>
+          <span>{mood ? MOOD_LABELS[mood] : "¿Cómo te sientes?"}</span>
           <ChevronDown
             size={14}
-            className="text-subtle shrink-0 transition-transform duration-200 ease-out"
-            style={{
-              transform: openMenu === "mood" ? "rotate(180deg)" : "rotate(0deg)",
-            }}
+            aria-hidden="true"
+            className={`text-subtle transition-transform duration-small ease-out ${panel === "mood" ? "rotate-180" : ""}`}
           />
         </button>
 
-        {/* 2. Pastilla "¿Sobre qué?" */}
         <button
+          key={`tag-${pulse.tag}`}
           type="button"
-          aria-label={contextPills.tagAria}
-          aria-expanded={openMenu === "tag"}
-          onClick={() => toggleMenu("tag")}
-          style={{
-            backgroundColor: selectedTag
-              ? "color-mix(in srgb, var(--voice) 13%, transparent)"
-              : openMenu === "tag"
-              ? "var(--surface)"
-              : "transparent",
-            borderColor: selectedTag
-              ? "color-mix(in srgb, var(--voice) 40%, transparent)"
-              : "color-mix(in srgb, var(--border) 70%, transparent)",
-          }}
-          className={`inline-flex items-center gap-1.5 h-8 pl-2.5 pr-2 rounded-full text-[13px] font-normal cursor-pointer border select-none transition-all duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
-            selectedTag
-              ? "text-foreground font-medium shadow-xs"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
+          onClick={() => toggle("tag")}
+          aria-expanded={panel === "tag"}
+          aria-controls={panelId}
+          aria-label={tag ? `Sobre qué escribes: ${tag}` : "Elige sobre qué escribes"}
+          className={`${pillClass(!!tag, panel === "tag")} ${pulse.tag ? "pill-pulse" : ""}`}
+          style={
+            tag
+              ? {
+                  backgroundColor: "color-mix(in srgb, var(--voice) 13%, transparent)",
+                  borderColor: "color-mix(in srgb, var(--voice) 40%, transparent)",
+                }
+              : { borderColor: "color-mix(in srgb, var(--border) 70%, transparent)" }
+          }
         >
-          <Hash
-            size={13}
-            className="shrink-0 transition-colors"
-            style={{ color: selectedTag ? "var(--voice)" : "var(--subtle)" }}
-          />
-          <span className="truncate">
-            {selectedTag ? `#${selectedTag}` : contextPills.tagDefaultLabel}
-          </span>
+          <Hash size={13} aria-hidden="true" className={tag ? "text-voice" : "text-subtle"} />
+          <span>{tag ?? "¿Sobre qué?"}</span>
           <ChevronDown
             size={14}
-            className="text-subtle shrink-0 transition-transform duration-200 ease-out"
-            style={{
-              transform: openMenu === "tag" ? "rotate(180deg)" : "rotate(0deg)",
-            }}
+            aria-hidden="true"
+            className={`text-subtle transition-transform duration-small ease-out ${panel === "tag" ? "rotate-180" : ""}`}
           />
         </button>
       </div>
 
-      {/* Panel desplegable en línea fluido con animación CSS de cuadrícula */}
-      <div
-        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
-          openMenu !== null
-            ? "grid-rows-[1fr] opacity-100"
-            : "grid-rows-[0fr] opacity-0 pointer-events-none"
-        }`}
-      >
-        <div className="overflow-hidden">
-          {/* Selector de Ánimos (MoodPicker) */}
-          {openMenu === "mood" && (
-            <div
-              role="radiogroup"
-              aria-label="Elige tu ánimo"
-              className="flex flex-wrap items-center gap-2 py-1"
-            >
-              {moods.map((m) => {
-                const isSelected = selectedMood === m.id;
-                return (
-                  <button
-                    key={m.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={isSelected}
-                    onClick={() => handleSelectMood(m.id)}
-                    style={{
-                      backgroundColor: isSelected
-                        ? `color-mix(in srgb, ${m.colorVar} 16%, transparent)`
-                        : "var(--surface)",
-                      borderColor: isSelected
-                        ? `color-mix(in srgb, ${m.colorVar} 55%, transparent)`
-                        : "color-mix(in srgb, var(--border) 50%, transparent)",
-                    }}
-                    className={`h-9 inline-flex items-center gap-2 rounded-full pl-2.5 pr-3.5 border text-[13px] transition-all duration-200 ease-out active:scale-[0.97] cursor-pointer ${
-                      isSelected
-                        ? "font-medium text-foreground shadow-xs"
-                        : "text-muted-foreground hover:text-foreground hover:border-border"
-                    }`}
-                  >
-                    <span
-                      className="w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 border-[1.5px]"
-                      style={{ borderColor: m.colorVar }}
-                    >
-                      <span
-                        className="w-1.5 h-1.5 rounded-full transition-transform duration-200"
-                        style={{
-                          backgroundColor: m.colorVar,
-                          transform: isSelected ? "scale(1)" : "scale(0.4)",
-                          opacity: isSelected ? 1 : 0.45,
-                        }}
-                      />
-                    </span>
-                    <span>{m.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+      {showHint ? (
+        <p key={question} className="enter font-replica text-[17px] italic leading-6 text-reply" aria-live="polite">
+          {question}
+        </p>
+      ) : null}
 
-          {/* Selector de Temas (TagPicker) */}
-          {openMenu === "tag" && (
-            <div
-              role="radiogroup"
-              aria-label="Elige el tema sobre el que escribes"
-              className="flex flex-wrap items-center gap-2 py-1"
-            >
-              {themes.map((t) => {
-                const isSelected = selectedTag === t;
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    role="radio"
-                    aria-checked={isSelected}
-                    onClick={() => handleSelectTag(t)}
-                    style={{
-                      backgroundColor: isSelected
-                        ? "color-mix(in srgb, var(--voice) 12%, transparent)"
-                        : "transparent",
-                      borderColor: isSelected
-                        ? "color-mix(in srgb, var(--voice) 50%, transparent)"
-                        : "color-mix(in srgb, var(--border) 70%, transparent)",
-                      color: isSelected ? "var(--voice)" : "var(--muted-foreground)",
-                    }}
-                    className={`h-8 inline-flex items-center justify-center rounded-full px-3 text-[13px] border transition-all duration-200 ease-out active:scale-[0.97] cursor-pointer ${
-                      isSelected
-                        ? "font-medium shadow-xs"
-                        : "hover:text-foreground hover:border-border"
-                    }`}
-                  >
-                    #{t}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+      {panel === "mood" ? (
+        <div id={panelId} role="radiogroup" aria-label="Cómo te sientes" className="panel-in flex flex-wrap gap-2 py-1">
+          {MOODS.map((m) => {
+            const selected = mood === m;
+            return (
+              <button
+                key={m}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                onClick={() => {
+                  const next = selected ? null : m;
+                  onMoodChange(next);
+                  // Quitarlo deja el panel abierto: hace falta elegir uno.
+                  if (next) advance(tag ? null : "tag");
+                }}
+                className={`inline-flex h-9 items-center gap-2 rounded-full border pl-2.5 pr-3.5 text-[13px] transition-all duration-small ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
+                  selected ? "font-medium text-foreground" : "bg-surface text-muted-foreground hover:text-foreground"
+                }`}
+                style={{
+                  backgroundColor: selected ? `color-mix(in srgb, ${moodColor(m)} 16%, transparent)` : undefined,
+                  borderColor: selected
+                    ? `color-mix(in srgb, ${moodColor(m)} 55%, transparent)`
+                    : "color-mix(in srgb, var(--border) 50%, transparent)",
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  className="flex h-3.5 w-3.5 items-center justify-center rounded-full border-[1.5px]"
+                  style={{ borderColor: moodColor(m) }}
+                >
+                  <span
+                    className="h-1.5 w-1.5 rounded-full transition-transform duration-small"
+                    style={{ backgroundColor: moodColor(m), transform: selected ? "scale(1)" : "scale(0.4)", opacity: selected ? 1 : 0.45 }}
+                  />
+                </span>
+                {MOOD_LABELS[m]}
+              </button>
+            );
+          })}
         </div>
-      </div>
+      ) : null}
+
+      {panel === "tag" ? (
+        <div id={panelId} role="radiogroup" aria-label="Sobre qué escribes" className="panel-in flex flex-wrap gap-2 py-1">
+          {SUGGESTED_TAGS.map((t) => {
+            const selected = tag === t;
+            return (
+              <button
+                key={t}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                onClick={() => {
+                  const next = selected ? null : t;
+                  onTagChange(next);
+                  if (next) advance(mood ? null : "mood");
+                }}
+                className={`inline-flex h-9 items-center rounded-full border px-3.5 text-[13px] transition-all duration-small ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
+                  selected
+                    ? "border-voice/50 bg-voice/10 font-medium text-voice"
+                    : "border-border/70 text-muted-foreground hover:border-border hover:text-foreground"
+                }`}
+              >
+                #{t}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 };

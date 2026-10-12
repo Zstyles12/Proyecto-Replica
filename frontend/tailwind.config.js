@@ -1,58 +1,79 @@
+/**
+ * Un token de color que acepta opacidad (`border-border/40`, `bg-reply-soft/25`…).
+ * Los colores viven como variables CSS con su hexadecimal (`src/index.css`); con `var(--x)` a secas,
+ * Tailwind 3 no sabe aplicar la opacidad y no genera la clase. Con opacidad se mezcla con
+ * `color-mix`, sin tocar las variables.
+ */
+const token = (name) => ({ opacityValue }) =>
+  opacityValue === undefined || opacityValue === "1"
+    ? `var(--${name})`
+    : `color-mix(in srgb, var(--${name}) calc(${opacityValue} * 100%), transparent)`;
+
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  // Oscuro cuando se eligió (data-theme="dark") o cuando sigue al sistema y el sistema está en oscuro.
+  darkMode: [
+    "variant",
+    [
+      '&:is([data-theme="dark"] *)',
+      '@media (prefers-color-scheme: dark) { &:is(:root:not([data-theme="light"]) *) }',
+    ],
   ],
-  darkMode: ["class", '[data-theme="dark"]'],
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        background: token("background"),
+        foreground: token("foreground"),
         surface: {
-          DEFAULT: "var(--surface)",
-          raised: "var(--surface-raised)",
-          sunken: "var(--surface-sunken)",
+          DEFAULT: token("surface"),
+          raised: token("surface-raised"),
+          sunken: token("surface-sunken"),
         },
         muted: {
-          DEFAULT: "var(--muted)",
-          foreground: "var(--muted-foreground)",
+          DEFAULT: token("muted"),
+          foreground: token("muted-foreground"),
         },
-        subtle: "var(--subtle)",
-        border: "var(--border)",
-        warp: "var(--warp)",
+        subtle: token("subtle"),
+        border: token("border"),
+        warp: token("warp"),
         voice: {
-          DEFAULT: "var(--voice)",
-          foreground: "var(--voice-foreground)",
-          soft: "var(--voice-soft)",
+          DEFAULT: token("voice"),
+          foreground: token("voice-foreground"),
+          soft: token("voice-soft"),
         },
         reply: {
-          DEFAULT: "var(--reply)",
-          foreground: "var(--reply-foreground)",
-          soft: "var(--reply-soft)",
+          DEFAULT: token("reply"),
+          foreground: token("reply-foreground"),
+          soft: token("reply-soft"),
         },
         emotion: {
-          DEFAULT: "var(--emotion)",
-          foreground: "var(--emotion-foreground)",
-          soft: "var(--emotion-soft)",
+          DEFAULT: token("emotion"),
+          foreground: token("emotion-foreground"),
+          soft: token("emotion-soft"),
         },
         destructive: {
-          DEFAULT: "var(--destructive)",
-          foreground: "var(--destructive-foreground)",
+          DEFAULT: token("destructive"),
+          foreground: token("destructive-foreground"),
         },
         sun: {
-          DEFAULT: "var(--sun)",
-          soft: "var(--sun-soft)",
+          DEFAULT: token("sun"),
+          soft: token("sun-soft"),
         },
         mood: {
-          paz: "var(--mood-paz)",
-          alegria: "var(--mood-alegria)",
-          gratitud: "var(--mood-gratitud)",
-          reflexion: "var(--mood-reflexion)",
-          cansancio: "var(--mood-cansancio)",
-          ansiedad: "var(--mood-ansiedad)",
-          tristeza: "var(--mood-tristeza)",
+          paz: token("mood-paz"),
+          alegria: token("mood-alegria"),
+          gratitud: token("mood-gratitud"),
+          reflexion: token("mood-reflexion"),
+          cansancio: token("mood-cansancio"),
+          ansiedad: token("mood-ansiedad"),
+          tristeza: token("mood-tristeza"),
+        },
+        // Tela de días (DESIGN.md §3.2): 1, 2 y 3 o más notas.
+        cloth: {
+          1: token("cloth-1"),
+          2: token("cloth-2"),
+          3: token("cloth-3"),
         },
       },
       borderRadius: {

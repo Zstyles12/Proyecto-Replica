@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
-import type { CurvePoint, CurveAxisLabel, CurvePeriod } from "../../../services/metrics";
-import { PLAYGROUND_CONTENT } from "../../../data/playgroundContent";
+import type { CurvePoint, CurveAxisLabel, CurvePeriod } from "../../profile/metrics";
+import { MOOD_ITEMS } from "../../journal/moods";
 import { EVOLUCION_CONTENT } from "../../../data/evolucionContent";
 
 interface MoodCurveProps {
@@ -67,7 +67,7 @@ function buildMonotoneSvgPath(coords: { x: number; y: number }[]): string {
 export const MoodCurve: React.FC<MoodCurveProps> = ({ points, axis, period }) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const moods = PLAYGROUND_CONTENT.moods;
+  const moods = MOOD_ITEMS;
   const { moodCurve: copy } = EVOLUCION_CONTENT;
 
   // Ancho virtual del SVG viewBox
@@ -299,6 +299,14 @@ export const MoodCurve: React.FC<MoodCurveProps> = ({ points, axis, period }) =>
                   } else if (e.key === "Escape") {
                     setSelectedIndex(null);
                     setHoveredIndex(null);
+                  } else if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+                    // Las flechas recorren la curva de un punto al siguiente.
+                    e.preventDefault();
+                    const points = Array.from(
+                      e.currentTarget.parentElement?.querySelectorAll<SVGGElement>("g[role='button']") ?? []
+                    );
+                    const at = points.indexOf(e.currentTarget);
+                    points[at + (e.key === "ArrowRight" ? 1 : -1)]?.focus();
                   }
                 }}
               >

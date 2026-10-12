@@ -1,89 +1,63 @@
 import React from "react";
-import { PenLine, Sprout, UserRound } from "lucide-react";
-import { USUARIO_CONTENT } from "../../../data/usuarioContent";
+import { CalendarHeart, PenLine, Sprout, UserRound } from "lucide-react";
+import { Avatar } from "../../care/components/CareParts";
 
-interface ProfileHeroProps {
-  name: string;
-  intention: string;
-  memberSince: string;
-  onEdit: () => void;
+function monthYear(iso: string) {
+  return new Date(iso).toLocaleDateString("es", { month: "long", year: "numeric" });
 }
 
-export const ProfileHero: React.FC<ProfileHeroProps> = ({
-  name,
-  intention,
-  memberSince,
-  onEdit,
-}) => {
-  const { hero } = USUARIO_CONTENT;
-
-  // Formato mes y año
-  const formattedSince = new Intl.DateTimeFormat("es-ES", {
-    month: "long",
-    year: "numeric",
-  }).format(new Date(memberSince));
-
-  const capitalizedSince =
-    formattedSince.charAt(0).toUpperCase() + formattedSince.slice(1);
-
-  const initials = name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0].toUpperCase())
-    .join("");
-
-  return (
-    <div className="relative overflow-hidden rounded-3xl bg-surface-raised border border-border/40 shadow-raised p-6 sm:p-7 select-none transition-all">
-      {/* Botón flotante para editar perfil */}
-      <button
-        type="button"
-        onClick={onEdit}
-        title={hero.editTooltip}
-        aria-label={hero.editTooltip}
-        className="absolute top-4 right-4 w-9 h-9 rounded-full bg-surface hover:bg-surface-sunken border border-border/30 flex items-center justify-center text-muted-foreground hover:text-foreground transition-all cursor-pointer shadow-xs active:scale-[0.96]"
-      >
-        <PenLine size={16} />
-      </button>
-
-      <div className="flex flex-col items-center text-center space-y-4">
-        {/* Avatar grande con insignia de brote 🌱 */}
-        <div className="relative">
-          <div className="w-24 h-24 rounded-full bg-voice-soft text-voice font-semibold flex items-center justify-center text-2xl shadow-xs border-2 border-border/30">
-            {initials ? initials : <UserRound size={36} className="text-voice" />}
-          </div>
-
-          <div
-            className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-voice text-voice-foreground flex items-center justify-center border-2 border-surface-raised shadow-xs"
-            title="Miembro de Replica"
-          >
-            <Sprout size={14} />
-          </div>
-        </div>
-
-        {/* Nombre y Frase de Intención */}
-        <div className="space-y-1.5 max-w-md">
-          <h2 className="font-replica text-2xl md:text-3xl font-normal text-foreground tracking-tight">
-            {name || "Tu perfil"}
-          </h2>
-
-          {intention ? (
-            <p className="font-replica italic text-base md:text-lg text-voice leading-snug">
-              “{intention}”
-            </p>
+/**
+ * La ficha de Usuario (features/profile/components/profile.tsx de la app): foto o iniciales, nombre, la
+ * frase propia y desde cuándo. Toda la ficha abre "Editar perfil".
+ */
+export const ProfileHero: React.FC<{
+  name: string;
+  intention: string;
+  photo: string | null;
+  memberSince: string;
+  onEdit: () => void;
+}> = ({ name, intention, photo, memberSince, onEdit }) => (
+  <button
+    type="button"
+    onClick={onEdit}
+    aria-label={`${name || "Tu perfil"}. Editar perfil`}
+    className="relative w-full overflow-hidden rounded-lg border border-border/40 bg-surface-raised p-6 text-center shadow-raised transition-colors hover:border-border/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice dark:shadow-none sm:p-7"
+  >
+    <span aria-hidden="true" className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-surface text-muted-foreground">
+      <PenLine size={15} />
+    </span>
+    <span className="flex flex-col items-center">
+      <span className="relative mb-4">
+        <span className="flex h-24 w-24 items-center justify-center rounded-full bg-surface-raised p-1 shadow-raised dark:shadow-none">
+          {name || photo ? (
+            <Avatar name={name} size={88} photo={photo} />
           ) : (
-            <p className="text-xs text-muted-foreground font-voice">
-              {hero.noIntentionPrompt}
-            </p>
+            <span className="flex h-[88px] w-[88px] items-center justify-center rounded-full bg-voice-soft text-voice">
+              <UserRound size={36} aria-hidden="true" />
+            </span>
           )}
-
-          <p className="text-xs text-subtle font-voice pt-1">
-            {hero.memberSincePrefix} {capitalizedSince}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-};
+        </span>
+        <span
+          aria-hidden="true"
+          className="absolute bottom-0.5 right-0.5 flex h-7 w-7 items-center justify-center rounded-full border-2 border-surface-raised bg-voice text-voice-foreground"
+        >
+          <Sprout size={14} />
+        </span>
+      </span>
+      <span className="font-replica text-[28px] font-normal leading-[34px] tracking-[-0.3px] text-foreground">{name || "Tu perfil"}</span>
+      {intention ? (
+        <span className="mt-1 max-w-[280px] font-replica text-lg italic leading-[25px] text-voice">“{intention}”</span>
+      ) : (
+        <span className="mt-1 text-[15px] text-muted-foreground">
+          {name ? "Añade una frase que te acompañe" : "Añade tu nombre y una frase que te acompañe"}
+        </span>
+      )}
+      <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-1.5 text-[13px] text-muted-foreground">
+        <CalendarHeart size={14} className="text-voice" aria-hidden="true" />
+        En Replica desde {monthYear(memberSince)}
+      </span>
+    </span>
+  </button>
+);
 
 export default ProfileHero;

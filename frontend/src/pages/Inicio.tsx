@@ -1,440 +1,352 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { NotebookText, Clock, Lock, Sparkles } from "lucide-react";
-import { CofreIcon } from "../components/brand/CofreIcon";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { BookmarkCheck, Lock, MoonStar, X } from "lucide-react";
+import { CofreButton } from "../components/brand/CofreButton";
+import { GrowthStreak } from "../components/brand/GrowthIcon";
+import { Enter, WordReveal } from "../components/motion/Motion";
 import { ContextPills } from "../features/journal/components/ContextPills";
+import { DayStatus } from "../features/journal/components/DayStatus";
 import { WriterSheet } from "../features/journal/components/WriterSheet";
-import { ReplyCard } from "../features/journal/components/ReplyCard";
-import { ClosingCard } from "../features/journal/components/ClosingCard";
-import { DailyChestCard } from "../features/journal/components/DailyChestCard";
-import { INICIO_CONTENT } from "../data/inicioContent";
-import { PLAYGROUND_CONTENT } from "../data/playgroundContent";
-import { authService } from "../services/auth";
-import { journalService, type Entry, type AIReply } from "../services/journal";
+import { NoteClosing, WovenNote } from "../features/journal/components/WovenNote";
+import { PhraseCard } from "../features/cofre/components/PhraseCard";
+import { phrasesForDay } from "../features/cofre/library";
+import { phraseFromLibrary } from "../features/cofre/store";
+import { dayReplies, lateNotesOf, useDayReply, useLateReply } from "../features/journal/dayReplies";
+import {
+  dayKey,
+  journal,
+  nextReplyMode,
+  notesToday,
+  replyModeOf,
+  streakDays,
+  useNote,
+  useNotes,
+  dayNotes,
+} from "../features/journal/store";
+import { promptForDate, type Mood } from "../features/journal/moods";
+import { firstName, useProfile } from "../features/profile/store";
+import { setPendingPrompt, usePendingPrompt } from "../lib/appState";
+import { capitalize } from "../lib/format";
 import { playSound } from "../lib/sounds";
+import { tutorials, useActiveTour, useCancelToursOnLeave } from "../lib/tutorials";
 
+type Mode = { kind: "compose" } | { kind: "note"; id: string };
+
+function greeting(date: Date) {
+  const h = date.getHours();
+  if (h < 5) return "Buenas noches";
+  if (h < 12) return "Buenos días";
+  if (h < 19) return "Buenas tardes";
+  return "Buenas noches";
+}
+
+// Lo que dice el recorrido de la racha, según cuánto creció ya.
+function streakTip(days: number) {
+  if (days >= 50) return "Esta es tu flor. Creció con cada día que escribiste, igual que tú.";
+  if (days >= 20) return "Esta es tu plantita. Crece con cada día que escribes, y tú creces con ella.";
+  if (days >= 10) return "Este es tu brote. Crece con cada día que escribes, y tú creces con él.";
+  return "Esta es tu semilla. Crece con cada día que escribes, y tú creces con ella.";
+}
+
+/**
+ * Inicio (app/(tabs)/index.tsx de la app): fecha y racha, saludo con el cofre, la línea de la réplica
+ * del día, las pastillas, la hoja y las dos frases del día. Nada más: la hoja no compite con nada.
+ * En escritorio, las frases van en un panel a la derecha (DESIGN-WEB.md §4).
+ */
 export const Inicio: React.FC = () => {
   const navigate = useNavigate();
+  const notes = useNotes();
+  const { name, dayReplyHour } = useProfile();
+  const now = useMemo(() => new Date(), []);
+  const prompt = usePendingPrompt();
 
-  // Estados de entrada
-  const [content, setContent] = useState("");
-  const [selectedMood, setSelectedMood] = useState<string | null>(null);
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [mode, setMode] = useState<Mode>({ kind: "compose" });
+  const [text, setText] = useState("");
+  const [mood, setMood] = useState<Mood | null>(null);
+  const [tag, setTag] = useState<string | null>(null);
   const [isPrivate, setIsPrivate] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [askContext, setAskContext] = useState(0);
+  const [folding, setFolding] = useState(false);
+  const [passing, setPassing] = useState(false);
 
-  // Estados de flujo de réplica y guardado
-  const [isSaving, setIsSaving] = useState(false);
-  const [isThreadPassing, setIsThreadPassing] = useState(false);
-  const [savedReply, setSavedReply] = useState<AIReply | null>(null);
-  const [showClosing, setShowClosing] = useState(false);
-  const [lastSavedPrivate, setLastSavedPrivate] = useState(false);
+  // Para los recorridos.
+  const contextRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const privateRef = useRef<HTMLButtonElement>(null);
+  const actionRef = useRef<HTMLDivElement>(null);
+  const cofreRef = useRef<HTMLAnchorElement>(null);
+  const streakRef = useRef<HTMLDivElement>(null);
 
-  // Lista de notas recientes inicializada con el servicio local
-  const [recentEntries, setRecentEntries] = useState<Entry[]>(() =>
-    journalService.getRecentEntries(3)
-  );
+  const streak = streakDays(notes);
+  const phrases = useMemo(() => phrasesForDay(now).map(phraseFromLibrary), [now]);
+  const todays = useMemo(() => notesToday(notes), [notes]);
+  // La primera nota del día (no privada) recibe su réplica al momento; las demás se leen juntas en
+  // la réplica del día.
+  const replyMode = nextReplyMode(notes, isPrivate);
+  const toReadTonight = dayNotes(notes).length;
+  const today = dayKey(now);
+  const dayReply = useDayReply(today);
+  const yesterday = useMemo(() => {
+    const d = new Date(now);
+    d.setDate(d.getDate() - 1);
+    return dayKey(d);
+  }, [now]);
+  const lastNight = useLateReply(yesterday);
+  const lateToday = dayReply ? lateNotesOf(notes, today).length : 0;
 
-  const session = authService.getSession();
-  const userName = session?.user.name || "Ana";
-  const userTime = session?.user.dayReplyTime || "22:00";
+  // Pasada la hora, la réplica del día se pide al abrir Inicio, junto con las de días en que no se
+  // abrió la web a esa hora (con Supabase las hará el servidor).
+  useEffect(() => {
+    dayReplies.catchUp(notes);
+  }, [notes, dayReplyHour]);
 
-  const { header, greetings, dayReplyStatus, writer, dailyQuotes, recentNotes } =
-    INICIO_CONTENT;
+  // Si llega con la pantalla abierta, suena la campanita al terminar.
+  const dayStatus = dayReply?.replyStatus;
+  const prevDayStatus = useRef(dayStatus);
+  useEffect(() => {
+    if (prevDayStatus.current === "streaming" && dayStatus === "done") playSound("replica");
+    prevDayStatus.current = dayStatus;
+  }, [dayStatus]);
 
-  // Formato de fecha serena
-  const todayFormatted = new Intl.DateTimeFormat("es-ES", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(new Date());
+  // Viene de "Escribir sobre esto": vuelve a la hoja y la enfoca.
+  const [lastPrompt, setLastPrompt] = useState(prompt);
+  if (prompt !== lastPrompt) {
+    setLastPrompt(prompt);
+    if (prompt) setMode({ kind: "compose" });
+  }
+  useEffect(() => {
+    if (!prompt) return;
+    const t = setTimeout(() => document.getElementById("writer-sheet")?.focus(), 350);
+    return () => clearTimeout(t);
+  }, [prompt]);
 
-  const capitalizedDate =
-    todayFormatted.charAt(0).toUpperCase() + todayFormatted.slice(1);
+  // Con la hoja vacía ya no se está pidiendo nada: el aviso se retira.
+  if (!text.trim() && askContext) setAskContext(0);
 
-  // Saludo según la hora
-  const currentHour = new Date().getHours();
-  const greetingPrefix =
-    currentHour < 12
-      ? greetings.morning
-      : currentHour < 19
-      ? greetings.afternoon
-      : greetings.evening;
-
-  // Manejar el guardado de la nota
-  const handleSubmit = async () => {
-    setNotice(null);
-
-    // Validación amable (Sección 11 regla 3 de DESIGN.md: nunca en rojo)
-    if (!selectedMood) {
-      setNotice(writer.notices.missingMood);
+  const save = (value: string) => {
+    if (!value) return;
+    if (!mood || !tag) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      setAskContext((n) => n + 1);
       return;
     }
-    if (!selectedTag) {
-      setNotice(writer.notices.missingTag);
-      return;
-    }
-    if (!content.trim()) return;
-
-    setIsSaving(true);
-    setIsThreadPassing(true);
     playSound("papel");
-
-    // Animación de "La pasada del hilo" (Sección 7.3: salvia va, malva vuelve en ~500 ms)
-    setTimeout(async () => {
-      setIsThreadPassing(false);
-
-      const result = await journalService.createEntry({
-        content,
-        mood: selectedMood,
-        tag: selectedTag,
-        is_private: isPrivate,
-      });
-
-      setRecentEntries(journalService.getRecentEntries(3));
-      setLastSavedPrivate(isPrivate);
-      setShowClosing(true);
-
-      if (result.reply) {
-        setSavedReply(result.reply);
-      } else {
-        setSavedReply(null);
-      }
-
-      // Limpiar hoja para nueva sesión
-      setContent("");
-      setSelectedMood(null);
-      setSelectedTag(null);
+    const note = journal.add({ text: value, mood, tags: [tag], prompt, replyMode });
+    setPendingPrompt(null);
+    if (replyMode === "instant") journal.requestReply(note.id);
+    // La hoja se pliega hacia arriba y pasa el hilo; la réplica entra encima.
+    setFolding(true);
+    setPassing(true);
+    setTimeout(() => setPassing(false), 760);
+    setTimeout(() => {
+      setFolding(false);
       setIsPrivate(false);
-      setIsSaving(false);
-    }, 520);
+      setText("");
+      setMood(null);
+      setTag(null);
+      setAskContext(0);
+      setMode({ kind: "note", id: note.id });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 260);
   };
 
-  const handleDismissClosing = () => {
-    setShowClosing(false);
-    setSavedReply(null);
-  };
+  // Replica preguntó lo que faltaba y ya está todo: un instante para que se vea lo elegido y la nota
+  // se guarda sola, sin volver a tocar el botón.
+  const saveRef = useRef(save);
+  useEffect(() => {
+    saveRef.current = save;
+  });
+  useEffect(() => {
+    if (!askContext || !mood || !tag) return;
+    const t = setTimeout(() => saveRef.current(text.trim()), 520);
+    return () => clearTimeout(t);
+  }, [askContext, mood, tag, text]);
+
+  // Recorridos: Inicio la primera vez, y la racha cuando asoma la planta.
+  const activeTour = useActiveTour();
+  useCancelToursOnLeave(["inicio", "racha", "primeraReplica"]);
+  useEffect(() => {
+    if (mode.kind !== "compose") return;
+    const t = setTimeout(
+      () =>
+        tutorials.start("inicio", [
+          { target: contextRef, text: "Cuéntale cómo te sientes y sobre qué escribes. Con esto ves tu evolución." },
+          { target: sheetRef, text: "Tu hoja: escribe o dicta con el micrófono, cuanto quieras.", radius: 32 },
+          { target: privateRef, text: "¿Es solo para ti? Márcala privada: no la lee Replica ni tu psicólogo.", radius: 22 },
+          {
+            target: actionRef,
+            text: "Tu primera nota del día recibe su réplica al momento. En la noche llega una más, que lee todo tu día.",
+            radius: 22,
+          },
+          { target: cofreRef, text: "Tu cofre: aquí quedan las frases que marques como favoritas.", radius: 26 },
+        ]),
+      1200
+    );
+    return () => clearTimeout(t);
+  }, [mode.kind]);
+  useEffect(() => {
+    if (mode.kind !== "compose" || streak < 1 || activeTour) return;
+    const t = setTimeout(() => tutorials.start("racha", [{ target: streakRef, text: streakTip(streak), radius: 14 }]), 1400);
+    return () => clearTimeout(t);
+  }, [mode.kind, streak, activeTour]);
+
+  // El texto de ejemplo invita sin pedir nada: la primera nota del día pregunta cómo empiezas; la
+  // segunda, cómo te fue.
+  const placeholder = useMemo(() => {
+    if (prompt) return "Escribe tu respuesta…";
+    if (todays.length === 0) {
+      return now.getHours() < 12 ? "Escribe aquí… ¿Cómo te sientes al empezar el día?" : `Escribe aquí… ${promptForDate(now)}`;
+    }
+    return "Escribe aquí… ¿Cómo te fue hoy? ¿Qué te llevas del día?";
+  }, [now, todays.length, prompt]);
+
+  // Qué dice el cierre según cómo responde Replica a la nota recién guardada.
+  const savedNote = useNote(mode.kind === "note" ? mode.id : null);
+  const savedMode = savedNote ? replyModeOf(savedNote) : "instant";
+  const closingCopy =
+    savedMode === "private"
+      ? { icon: Lock, title: "Nota privada", line: "Solo tú la lees. Ni Replica ni tu psicólogo la ven." }
+      : savedMode === "day"
+        ? {
+            icon: MoonStar,
+            title: "Guardada en tu diario",
+            line:
+              dayReply?.replyStatus === "done"
+                ? "Tu réplica de hoy ya llegó. Replica leerá esta nota a medianoche, en una última réplica."
+                : `Replica la leerá a las ${dayReplyHour}:00, junto con todo tu día.`,
+          }
+        : { icon: BookmarkCheck, title: "Guardada en tu diario", line: "Tómate un momento con lo que leíste." };
+
+  const first = firstName(name);
+  const dateLabel = capitalize(now.toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" }));
+
+  const phraseList = (
+    <div className="space-y-3">
+      {phrases.map((p) => (
+        <PhraseCard key={p.key} phrase={p} />
+      ))}
+    </div>
+  );
 
   return (
     <div className="pb-10">
-      {/* Animación de "La pasada del hilo" (Sección 7.3 de DESIGN.md) */}
-      {isThreadPassing && (
-        <div className="fixed inset-0 pointer-events-none z-50 flex flex-col justify-center overflow-hidden">
-          {/* Hilo de ida (Salvia) */}
-          <div className="w-full h-[2.5px] bg-voice animate-[slideRight_300ms_cubic-bezier(0.23,1,0.32,1)_forwards]" />
-          {/* Hilo de vuelta (Malva) */}
-          <div className="w-full h-[2.5px] bg-reply mt-1 animate-[slideLeft_300ms_cubic-bezier(0.23,1,0.32,1)_150ms_forwards]" />
+      {passing ? (
+        <div aria-hidden="true" className="pointer-events-none fixed inset-x-0 top-1/3 z-50 space-y-1">
+          <div className="thread-pass h-[2.5px] bg-voice" />
+          <div className="thread-pass-back h-[2.5px] bg-reply" />
         </div>
-      )}
+      ) : null}
 
-      {/* Cuadrícula editorial responsiva: 1 columna en móvil, 2 columnas equilibradas en escritorio (>= 1024px) */}
-      <div className="lg:grid lg:grid-cols-[1fr_360px] lg:gap-10 lg:items-start space-y-8 lg:space-y-0">
-        {/* Columna Principal / Hoja de escribir */}
-        <div className="min-w-0 space-y-6">
-          {/* 1. Cabecera serena: Fecha, Racha y Saludo */}
-          <header className="space-y-4">
-            {/* Fecha y costura de racha (Sección 10 de DESIGN.md) */}
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>{capitalizedDate}</span>
-              <div className="flex items-center gap-1.5" title="Costura de constancia">
-                <span className="w-1.5 h-1.5 rounded-full bg-voice" />
-                <span className="w-1.5 h-1.5 rounded-full bg-voice" />
-                <span className="w-1.5 h-1.5 rounded-full bg-voice" />
-                <span className="font-voice ml-1 text-foreground">
-                  {header.defaultStreak} {header.streakSuffix}
-                </span>
-              </div>
-            </div>
-
-            {/* Saludo grande y botón de Mi Cofre */}
-            <div className="flex items-center justify-between gap-4">
-              <h1 className="font-replica text-3xl sm:text-4xl font-normal text-foreground tracking-tight leading-tight">
-                {greetingPrefix}, {userName}
+      <div className="lg:grid lg:grid-cols-[1fr_340px] lg:items-start lg:gap-10">
+        <div className="mx-auto min-w-0 max-w-[680px] space-y-5 lg:mx-0">
+          <header className="space-y-1">
+            <Enter className="flex items-center justify-between gap-3">
+              <span className="text-[13px] leading-[18px] text-muted-foreground">{dateLabel}</span>
+              <GrowthStreak ref={streakRef} days={streak} />
+            </Enter>
+            <div className="flex items-center gap-3">
+              <h1 className="flex-1">
+                <WordReveal
+                  as="span"
+                  text={first ? `${greeting(now)}, ${first}` : greeting(now)}
+                  mode="stagger"
+                  className="block font-replica text-[28px] font-normal leading-[34px] tracking-[-0.3px] text-foreground"
+                />
               </h1>
-
-              {/* Botón Mi Cofre móvil (en desktop se destaca en el riel lateral) */}
-              <Link
-                to="/notas"
-                aria-label={header.chestAria}
-                title="Mi cofre"
-                className="lg:hidden w-11 h-11 rounded-full bg-surface border border-border/30 hover:bg-surface-sunken flex items-center justify-center text-foreground transition-all duration-small active:scale-[0.97] shrink-0"
-              >
-                <CofreIcon size={22} color="var(--voice)" heartColor="var(--emotion)" />
-              </Link>
+              <Enter index={1}>
+                <CofreButton ref={cofreRef} />
+              </Enter>
             </div>
-
-            {/* Línea de cuándo llega la réplica del día (Sección 10 de DESIGN.md) */}
-            <div className="flex items-center gap-2 text-xs text-subtle font-voice">
-              <Clock size={13} className="shrink-0 text-voice" />
-              <span>
-                {dayReplyStatus.waitingPrefix} {userTime}
-              </span>
-            </div>
+            <Enter index={1} className="pt-1">
+              <DayStatus
+                count={toReadTonight}
+                hour={dayReplyHour}
+                replied={!!dayReply}
+                late={lateToday}
+                arrived={
+                  dayReply
+                    ? { kind: "day", status: dayReply.replyStatus, day: today }
+                    : lastNight
+                      ? { kind: "late", status: lastNight.replyStatus, day: yesterday }
+                      : null
+                }
+              />
+            </Enter>
           </header>
 
-          {/* 2. Pastillas de Contexto (Ánimo y Tema) con expansión fluida */}
-          <ContextPills
-            selectedMood={selectedMood}
-            selectedTag={selectedTag}
-            onSelectMood={(mood) => {
-              setSelectedMood(mood);
-              setNotice(null);
-            }}
-            onSelectTag={(tag) => {
-              setSelectedTag(tag);
-              setNotice(null);
-            }}
-          />
+          {mode.kind === "compose" ? (
+            <div className={`space-y-3 ${folding ? "sheet-fold" : ""}`}>
+              <Enter index={1}>
+                <ContextPills
+                  tourRef={contextRef}
+                  mood={mood}
+                  onMoodChange={setMood}
+                  tag={tag}
+                  onTagChange={setTag}
+                  askToken={askContext}
+                  purpose={replyMode === "instant" ? "reply" : "save"}
+                />
+              </Enter>
 
-          {/* Aviso amable de Replica si falta contexto (Sección 3.1: nunca rojo) */}
-          {notice && (
-            <div className="p-3.5 rounded-md bg-surface-raised border border-reply/30 shadow-xs animate-section-enter">
-              <p className="font-replica italic text-reply text-sm leading-relaxed">
-                "{notice}"
-              </p>
+              {prompt ? (
+                <Enter className="flex items-start gap-2 rounded-md bg-reply-soft/60 px-4 py-3">
+                  <div className="flex-1 space-y-0.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.6px] text-reply">Escribes sobre</p>
+                    <p className="font-replica text-base italic leading-[22px] text-foreground">{prompt}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPendingPrompt(null)}
+                    aria-label="Quitar la pregunta"
+                    className="-mr-2 -mt-1 flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice"
+                  >
+                    <X size={18} aria-hidden="true" />
+                  </button>
+                </Enter>
+              ) : null}
+
+              <Enter index={2}>
+                <WriterSheet
+                  content={text}
+                  onChangeContent={setText}
+                  isPrivate={isPrivate}
+                  onTogglePrivate={() => setIsPrivate((v) => !v)}
+                  onSubmit={save}
+                  action={replyMode === "instant" ? "replica" : "guardar"}
+                  placeholder={placeholder}
+                  loading={folding}
+                  sheetRef={sheetRef}
+                  privateRef={privateRef}
+                  actionRef={actionRef}
+                />
+              </Enter>
+
+              <Enter index={3} className="pt-5 lg:hidden">
+                {phraseList}
+              </Enter>
             </div>
-          )}
-
-          {/* 3. La Hoja de Escribir (Radio 32 px, Sección 6) */}
-          <WriterSheet
-            content={content}
-            onChangeContent={(val) => {
-              setContent(val);
-              if (notice) setNotice(null);
-            }}
-            isPrivate={isPrivate}
-            onTogglePrivate={() => setIsPrivate(!isPrivate)}
-            onSubmit={handleSubmit}
-            loading={isSaving}
-          />
-
-          {/* 4. Réplica generada tras guardar */}
-          {savedReply && (
-            <ReplyCard
-              key={savedReply.id}
-              reply={savedReply}
-              onWriteAboutThis={(question) => {
-                setContent((prev) => (prev ? `${prev}\n\n${question}` : question));
-                setSavedReply(null);
-                setShowClosing(false);
-              }}
+          ) : (
+            <WovenNote
+              key={mode.id}
+              noteId={mode.id}
+              animate
+              actions={
+                <NoteClosing
+                  {...closingCopy}
+                  onDone={() => {
+                    setMode({ kind: "compose" });
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  onOpenNotes={() => navigate(`/notas/${mode.id}`)}
+                />
+              }
             />
           )}
-
-          {/* 5. Tarjeta de Cierre tras guardar */}
-          {showClosing && (
-            <ClosingCard
-              isPrivate={lastSavedPrivate}
-              onDismiss={handleDismissClosing}
-              onViewInNotes={() => navigate("/notas")}
-            />
-          )}
-
-          {/* Secciones en móvil (Frases del cofre y Notas recientes) */}
-          <div className="lg:hidden space-y-8 pt-4">
-            {/* Frases del día en móvil */}
-            <section className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {dailyQuotes.map((q) => (
-                  <DailyChestCard
-                    key={q.id}
-                    tag={q.tag}
-                    quote={q.quote}
-                    author={q.author}
-                  />
-                ))}
-              </div>
-            </section>
-
-            {/* Notas recientes en móvil */}
-            <section className="space-y-4 pt-2">
-              <div className="flex items-center justify-between">
-                <h2 className="font-replica text-2xl font-normal text-foreground">
-                  {recentNotes.title}
-                </h2>
-
-                <Link
-                  to="/notas"
-                  aria-label={header.notesAria}
-                  title="Ver todas tus notas"
-                  className="w-11 h-11 rounded-full bg-surface border border-border/30 hover:bg-surface-sunken flex items-center justify-center text-voice transition-all duration-small active:scale-[0.97]"
-                >
-                  <NotebookText size={21} strokeWidth={2} className="text-voice" />
-                </Link>
-              </div>
-
-              {recentEntries.length === 0 ? (
-                <div className="p-6 rounded-lg bg-surface-sunken border border-border/20 text-center">
-                  <p className="font-voice text-sm text-subtle">
-                    {recentNotes.empty}
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {recentEntries.map((entry) => {
-                    const moodObj = PLAYGROUND_CONTENT.moods.find(
-                      (m) => m.id === entry.mood
-                    );
-
-                    return (
-                      <div
-                        key={entry.id}
-                        className="p-4 rounded-lg bg-surface-raised border border-border/40 hover:border-border transition-colors space-y-2 shadow-xs"
-                      >
-                        <div className="flex items-center justify-between text-xs text-subtle">
-                          <div className="flex items-center gap-2">
-                            {moodObj && (
-                              <span
-                                className="w-2 h-2 rounded-full shrink-0"
-                                style={{ backgroundColor: moodObj.colorVar }}
-                              />
-                            )}
-                            <span className="font-medium text-foreground">
-                              {moodObj?.name || entry.mood}
-                            </span>
-                            <span>·</span>
-                            <span className="text-muted-foreground">#{entry.tag}</span>
-                          </div>
-
-                          <div className="flex items-center gap-1.5 text-subtle">
-                            {entry.is_private && <Lock size={12} className="text-voice" />}
-                            <span>
-                              {new Intl.DateTimeFormat("es-ES", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              }).format(new Date(entry.created_at))}
-                            </span>
-                          </div>
-                        </div>
-
-                        <p className="font-voice text-sm text-foreground line-clamp-2 leading-relaxed">
-                          {entry.content}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
-          </div>
         </div>
 
-        {/* Columna Lateral para Escritorio (>= 1024px) */}
-        <aside className="hidden lg:flex lg:flex-col lg:space-y-6 lg:sticky lg:top-8 select-none">
-          {/* Tarjeta del estado de la réplica */}
-          <div className="p-5 rounded-2xl bg-surface-raised border border-border/40 shadow-raised space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-voice tracking-wide uppercase">
-                <Sparkles size={14} className="text-voice" />
-                La Réplica de tu día
-              </span>
-              <span className="text-xs text-subtle font-mono">{userTime}</span>
-            </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Replica leerá con calma todo lo que escribas hoy y te responderá con una mirada serena a las {userTime}.
-            </p>
-          </div>
-
-          {/* Sección El Cofre / Palabras del día */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CofreIcon size={20} color="var(--voice)" heartColor="var(--emotion)" />
-                <h3 className="font-replica text-lg font-medium text-foreground">
-                  Palabras del día
-                </h3>
-              </div>
-              <Link
-                to="/notas"
-                aria-label={header.chestAria}
-                title="Abrir Mi cofre"
-                className="w-9 h-9 rounded-full bg-surface border border-border/30 hover:bg-surface-sunken flex items-center justify-center transition-all duration-small active:scale-[0.97]"
-              >
-                <CofreIcon size={17} color="var(--voice)" heartColor="var(--emotion)" />
-              </Link>
-            </div>
-
-            <div className="space-y-3">
-              {dailyQuotes.map((q) => (
-                <DailyChestCard
-                  key={q.id}
-                  tag={q.tag}
-                  quote={q.quote}
-                  author={q.author}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Sección Notas recientes para escritorio */}
-          <div className="space-y-3 pt-2">
-            <div className="flex items-center justify-between">
-              <h3 className="font-replica text-lg font-medium text-foreground">
-                {recentNotes.title}
-              </h3>
-              <Link
-                to="/notas"
-                aria-label={header.notesAria}
-                title="Ver todas tus notas"
-                className="w-9 h-9 rounded-full bg-surface border border-border/30 hover:bg-surface-sunken flex items-center justify-center text-voice transition-all duration-small active:scale-[0.97]"
-              >
-                <NotebookText size={18} strokeWidth={2} className="text-voice" />
-              </Link>
-            </div>
-
-            {recentEntries.length === 0 ? (
-              <div className="p-4 rounded-xl bg-surface-sunken border border-border/20 text-center">
-                <p className="font-voice text-xs text-subtle">
-                  {recentNotes.empty}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2.5">
-                {recentEntries.map((entry) => {
-                  const moodObj = PLAYGROUND_CONTENT.moods.find(
-                    (m) => m.id === entry.mood
-                  );
-
-                  return (
-                    <div
-                      key={entry.id}
-                      className="p-3.5 rounded-xl bg-surface-raised border border-border/30 hover:border-border/70 transition-colors space-y-1.5 shadow-xs"
-                    >
-                      <div className="flex items-center justify-between text-[11px] text-subtle">
-                        <div className="flex items-center gap-1.5">
-                          {moodObj && (
-                            <span
-                              className="w-1.5 h-1.5 rounded-full shrink-0"
-                              style={{ backgroundColor: moodObj.colorVar }}
-                            />
-                          )}
-                          <span className="font-medium text-foreground">
-                            {moodObj?.name || entry.mood}
-                          </span>
-                          <span>·</span>
-                          <span className="text-muted-foreground">#{entry.tag}</span>
-                        </div>
-
-                        <div className="flex items-center gap-1 text-subtle">
-                          {entry.is_private && <Lock size={11} className="text-voice" />}
-                          <span>
-                            {new Intl.DateTimeFormat("es-ES", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            }).format(new Date(entry.created_at))}
-                          </span>
-                        </div>
-                      </div>
-
-                      <p className="font-voice text-xs text-foreground/90 line-clamp-2 leading-relaxed">
-                        {entry.content}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+        {/* Escritorio: las dos frases del día al lado de la hoja, sin título (DESIGN-WEB.md §4). */}
+        <aside className="hidden lg:sticky lg:top-8 lg:block" aria-label="Frases del día">
+          <Enter index={3}>{phraseList}</Enter>
         </aside>
       </div>
     </div>

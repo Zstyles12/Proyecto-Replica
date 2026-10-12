@@ -1,94 +1,66 @@
-import React, { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
-import {
-  ChartSpline,
-  Activity,
-  Sparkles,
-  ArrowRight,
-} from "lucide-react";
-import { journalService } from "../services/journal";
-import {
-  moodCurve,
-  moodDays,
-  patterns,
-  clothDays,
-  summary,
-  recentSummary,
-  type CurvePeriod,
-} from "../services/metrics";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Activity } from "lucide-react";
+import { Enter } from "../components/motion/Motion";
+import { useNotes } from "../features/journal/store";
+import { clothDays, moodCurve, moodDays, patterns, recentSummary, summary, type CurvePeriod } from "../features/profile/metrics";
 import { MoodCurve } from "../features/evolution/components/MoodCurve";
 import { MoodBars } from "../features/evolution/components/MoodBars";
 import { WovenCloth } from "../features/evolution/components/WovenCloth";
 import { PatternCard } from "../features/evolution/components/PatternCard";
 import { WritingSummary } from "../features/evolution/components/WritingSummary";
-import { DailyChestCard } from "../features/journal/components/DailyChestCard";
-import { CofreIcon } from "../components/brand/CofreIcon";
 import { EVOLUCION_CONTENT } from "../data/evolucionContent";
-import { INICIO_CONTENT } from "../data/inicioContent";
+import { tutorials, useCancelToursOnLeave } from "../lib/tutorials";
 
-const PERIOD_DAYS: Record<CurvePeriod, number> = {
-  semana: 7,
-  mes: 35,
-  ano: 365,
-};
+const PERIOD_DAYS: Record<CurvePeriod, number> = { semana: 7, mes: 35, ano: 365 };
 
+/**
+ * Evolución (app/(tabs)/evolucion/index.tsx): cómo te sentiste en el tiempo, qué se repite en tus notas,
+ * tu escritura en números y tu tela. El cofre no se repite aquí: vive en Usuario y junto al saludo de
+ * Inicio. Todo sale de lo que escribiste o elegiste.
+ */
 export const Evolucion: React.FC = () => {
+  const notes = useNotes();
   const [period, setPeriod] = useState<CurvePeriod>("semana");
-  const [entries] = useState(() => journalService.getEntries());
+  const curveRef = useRef<HTMLDivElement>(null);
+  const { periods, periodSpans, moodCurve: curveCopy, patterns: patternsCopy } = EVOLUCION_CONTENT;
 
-  const { header, periods, periodSpans, moodCurve: curveCopy, patterns: patternsCopy, chest: chestCopy } =
-    EVOLUCION_CONTENT;
+  const curve = useMemo(() => moodCurve(notes, period), [notes, period]);
+  const moodsInPeriod = useMemo(() => moodDays(notes, PERIOD_DAYS[period]), [notes, period]);
+  const found = useMemo(() => patterns(notes), [notes]);
+  const columns = useMemo(() => clothDays(notes), [notes]);
+  const totals = useMemo(() => summary(notes), [notes]);
+  const month = useMemo(() => recentSummary(notes, 30), [notes]);
 
-  // Cálculos matemáticos
-  const curve = useMemo(() => moodCurve(entries, period), [entries, period]);
-  const moodsInPeriod = useMemo(
-    () => moodDays(entries, PERIOD_DAYS[period]),
-    [entries, period]
-  );
-  const foundPatterns = useMemo(() => patterns(entries), [entries]);
-  const clothColumns = useMemo(() => clothDays(entries), [entries]);
-  const totals = useMemo(() => summary(entries), [entries]);
-  const month = useMemo(() => recentSummary(entries, 30), [entries]);
-
-  const defaultPhrase = INICIO_CONTENT.dailyQuotes[0];
+  // La primera vez: la curva se recorre.
+  useCancelToursOnLeave(["evolucion"]);
+  useEffect(() => {
+    const t = setTimeout(
+      () => tutorials.start("evolucion", [{ target: curveRef, text: "Pasa el cursor o toca la curva para ver cómo te sentiste cada día.", radius: 24 }]),
+      700
+    );
+    return () => clearTimeout(t);
+  }, []);
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* Cabecera de la sección */}
-      <header className="space-y-2 select-none">
-        <div className="flex items-center justify-between">
-          <span className="inline-block px-3 py-1 rounded-full bg-voice-soft text-voice text-xs font-semibold uppercase tracking-wider">
-            {header.stepBadge}
-          </span>
-          <div className="w-10 h-10 rounded-full bg-voice-soft text-voice flex items-center justify-center shadow-xs">
-            <ChartSpline size={18} />
-          </div>
-        </div>
-        <h1 className="font-replica text-3xl md:text-4xl font-normal tracking-tight text-foreground">
-          {header.title}
-        </h1>
-        <p className="font-voice text-sm md:text-base text-muted-foreground max-w-2xl leading-relaxed">
-          {header.description}
-        </p>
-      </header>
+    <div className="space-y-6">
+      <Enter>
+        <h1 className="font-replica text-[28px] font-normal leading-[34px] tracking-[-0.3px] text-foreground">Evolución</h1>
+      </Enter>
 
-      {/* Cuadrícula responsiva: 2 columnas balanceadas en escritorio (>= 1024px) */}
-      <div className="lg:grid lg:grid-cols-[1fr_360px] lg:gap-8 lg:items-start space-y-6 lg:space-y-0">
-        {/* Columna Principal Izquierda (1fr) */}
-        <div className="space-y-6 min-w-0">
-          {/* Selector de Período Segmentado */}
-          <div className="inline-flex w-full sm:w-auto p-1 rounded-full bg-surface border border-border/40 select-none">
+      <div className="lg:grid lg:grid-cols-[1fr_340px] lg:items-start lg:gap-8">
+        <div className="min-w-0 space-y-6">
+          <div role="radiogroup" aria-label="Periodo" className="inline-flex w-full rounded-full bg-surface-sunken p-1 sm:w-auto">
             {periods.map((p) => {
-              const isSelected = period === p.value;
+              const selected = period === p.value;
               return (
                 <button
                   key={p.value}
                   type="button"
+                  role="radio"
+                  aria-checked={selected}
                   onClick={() => setPeriod(p.value)}
-                  className={`flex-1 sm:flex-initial px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-small cursor-pointer ${
-                    isSelected
-                      ? "bg-surface-raised text-foreground font-semibold shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
+                  className={`min-h-9 flex-1 rounded-full px-4 text-[13px] font-medium transition-all duration-indicator ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice sm:flex-initial ${
+                    selected ? "bg-surface-raised text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   {p.label}
@@ -97,118 +69,45 @@ export const Evolucion: React.FC = () => {
             })}
           </div>
 
-          {/* Tarjeta de Panorama Emocional (Curva + Barras) */}
-          <div className="p-5 md:p-6 rounded-3xl bg-surface-raised border border-border/40 shadow-raised space-y-5 select-none">
+          <section className="space-y-5 rounded-lg border border-border/40 bg-surface-raised p-5 shadow-raised dark:shadow-none md:p-6">
             <div className="space-y-1">
-              <div className="flex items-center gap-1.5 text-voice text-xs font-semibold uppercase tracking-wider">
-                <Activity size={15} />
-                <span>{curveCopy.badge}</span>
-              </div>
-              <h2 className="font-replica text-2xl font-normal text-foreground">
-                {curveCopy.title}
-              </h2>
-              <p className="text-xs text-muted-foreground font-voice">
+              <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.6px] text-voice">
+                <Activity size={14} aria-hidden="true" />
+                {curveCopy.badge}
+              </p>
+              <h2 className="font-replica text-[26px] font-normal leading-8 text-foreground">{curveCopy.title}</h2>
+              <p className="text-xs text-muted-foreground">
                 {periodSpans[period]}, {curveCopy.subtitleSuffix}
               </p>
             </div>
+            <div ref={curveRef}>
+              <MoodCurve points={curve.points} axis={curve.axis} period={period} />
+            </div>
+            <div className="h-px bg-border/30" />
+            <MoodBars counts={moodsInPeriod} periodDays={PERIOD_DAYS[period]} />
+          </section>
 
-            {/* Curva interactiva en SVG */}
-            <MoodCurve
-              points={curve.points}
-              axis={curve.axis}
-              period={period}
-            />
-
-            <div className="h-px bg-border/20" />
-
-            {/* Barras porcentuales de ánimo */}
-            <MoodBars
-              counts={moodsInPeriod}
-              periodDays={PERIOD_DAYS[period]}
-            />
-          </div>
-
-          {/* Tarjeta Tu Tela (Matriz de 12 semanas) */}
-          <div className="p-5 md:p-6 rounded-3xl bg-surface-raised border border-border/40 shadow-raised select-none">
-            <WovenCloth columns={clothColumns} />
-          </div>
+          <section className="rounded-lg border border-border/40 bg-surface-raised p-5 shadow-raised dark:shadow-none md:p-6">
+            <WovenCloth columns={columns} />
+          </section>
         </div>
 
-        {/* Columna Lateral Derecha (360px) */}
-        <aside className="space-y-6 select-none">
-          {/* Resumen de palabras escritas */}
-          <WritingSummary
-            words={totals.words}
-            notes={month.notes}
-            days={month.days}
-          />
+        <aside className="mt-6 space-y-6 lg:mt-0">
+          <WritingSummary words={totals.words} notes={month.notes} days={month.days} />
 
-          {/* Sección de Temas y Patrones */}
-          <div className="p-5 md:p-6 rounded-3xl bg-surface-raised border border-border/40 shadow-raised space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Sparkles size={16} className="text-reply" />
-                <h3 className="font-replica text-lg font-medium text-foreground">
-                  {patternsCopy.title}
-                </h3>
-              </div>
-              {foundPatterns.length > 0 && (
-                <span className="text-[11px] font-mono text-voice font-semibold">
-                  {foundPatterns.length}{" "}
-                  {foundPatterns.length === 1
-                    ? patternsCopy.badgeFoundSingular
-                    : patternsCopy.badgeFoundPlural}
-                </span>
-              )}
-            </div>
-
-            {foundPatterns.length > 0 ? (
+          <section className="space-y-4 rounded-lg border border-border/40 bg-surface-raised p-5 shadow-raised dark:shadow-none md:p-6">
+            <h2 className="font-replica text-xl font-medium leading-[26px] text-foreground">{patternsCopy.title}</h2>
+            {found.length ? (
               <div className="space-y-3">
-                {foundPatterns.map((pat) => (
-                  <PatternCard key={pat.id} pattern={pat} />
+                {found.map((p) => (
+                  <PatternCard key={p.id} pattern={p} />
                 ))}
               </div>
             ) : (
-              <div className="p-4 rounded-2xl bg-surface border border-border/30 text-center space-y-1">
-                <p className="font-replica text-sm font-medium text-foreground">
-                  {patternsCopy.emptyTitle}
-                </p>
-                <p className="text-xs text-muted-foreground font-voice leading-relaxed">
-                  {patternsCopy.emptyDescription}
-                </p>
-              </div>
+              <p className="text-[15px] leading-[21px] text-muted-foreground">{patternsCopy.emptyDescription}</p>
             )}
-
-            <p className="text-[11px] text-subtle font-voice pt-1 border-t border-border/20">
-              {patternsCopy.footnote}
-            </p>
-          </div>
-
-          {/* Cofre de Aprendizajes (Frase Destilada) */}
-          <div className="p-5 md:p-6 rounded-3xl bg-surface-raised border border-border/40 shadow-raised space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CofreIcon size={18} color="var(--voice)" heartColor="var(--emotion)" />
-                <h3 className="font-replica text-lg font-medium text-foreground">
-                  {chestCopy.title}
-                </h3>
-              </div>
-
-              <Link
-                to="/notas"
-                className="text-xs text-voice hover:underline inline-flex items-center gap-1 font-semibold"
-              >
-                <span>{chestCopy.openButton}</span>
-                <ArrowRight size={12} />
-              </Link>
-            </div>
-
-            <DailyChestCard
-              tag={defaultPhrase.tag}
-              quote={defaultPhrase.quote}
-              author={defaultPhrase.author}
-            />
-          </div>
+            <p className="border-t border-border/30 pt-2 text-xs text-muted-foreground">{patternsCopy.footnote}</p>
+          </section>
         </aside>
       </div>
     </div>

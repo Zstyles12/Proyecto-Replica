@@ -1,15 +1,30 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Mic, MicOff, Lock, Unlock, Sparkles, Save } from "lucide-react";
 import { Button } from "../../../components/ui/Button";
 import { INICIO_CONTENT } from "../../../data/inicioContent";
+import { useDictation } from "../hooks/useDictation";
 
 interface WriterSheetProps {
   content: string;
   onChangeContent: (val: string) => void;
   isPrivate: boolean;
   onTogglePrivate: () => void;
-  onSubmit: () => void;
+  // Recibe el texto final (con lo que se estaba dictando).
+  onSubmit: (text: string) => void;
+  // "replica": la primera nota del día, que recibe su réplica al momento. "guardar": las demás y las privadas.
+  action: "replica" | "guardar";
+  placeholder: string;
   loading?: boolean;
+  sheetRef?: React.Ref<HTMLDivElement>;
+  privateRef?: React.Ref<HTMLButtonElement>;
+  actionRef?: React.Ref<HTMLDivElement>;
+}
+
+// Une dos tramos de texto con un espacio, sin duplicarlo.
+function join(a: string, b: string) {
+  if (!a) return b;
+  if (!b) return a;
+  return /\s$/.test(a) ? a + b : `${a} ${b}`;
 }
 
 export const WriterSheet: React.FC<WriterSheetProps> = ({
@@ -18,147 +33,160 @@ export const WriterSheet: React.FC<WriterSheetProps> = ({
   isPrivate,
   onTogglePrivate,
   onSubmit,
+  action,
+  placeholder,
   loading = false,
+  sheetRef,
+  privateRef,
+  actionRef,
 }) => {
-  const [isListening, setIsListening] = useState(false);
-  const [speechSupported] = useState<boolean>(() => {
-    return (
-      typeof window !== "undefined" &&
-      Boolean((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
-    );
-  });
-  const recognitionRef = useRef<any>(null);
-
   const { writer } = INICIO_CONTENT;
+  // Lo que se está dictando y todavía puede cambiar: se muestra, pero no es parte de la nota.
+  const [interim, setInterim] = useState("");
+  const contentRef = useRef(content);
 
-  // Comprobar e inicializar Web Speech API (02-estructura.md)
   useEffect(() => {
-    if (!speechSupported) return;
+    contentRef.current = content;
+  }, [content]);
 
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+  const onTranscript = useCallback(
+    (text: string, isFinal: boolean) => {
+      if (isFinal) {
+        const next = join(contentRef.current, text);
+        contentRef.current = next;
+        onChangeContent(next);
+        setInterim("");
+      } else {
+        setInterim(text);
+      }
+    },
+    [onChangeContent]
+  );
 
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = "es-ES";
-
-      recognition.onresult = (event: any) => {
-        let transcript = "";
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          transcript += event.results[i][0].transcript;
-        }
-        if (transcript) {
-          onChangeContent(content ? `${content} ${transcript}` : transcript);
-        }
-      };
-
-      recognition.onerror = () => {
-        setIsListening(false);
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-
-      recognitionRef.current = recognition;
-    }
-  }, [content, onChangeContent, speechSupported]);
+  const dictation = useDictation({ onTranscript });
+  const isListening = dictation.state === "listening" || dictation.state === "starting";
+  const value = join(content, interim);
 
   const toggleListening = () => {
-    if (!speechSupported || !recognitionRef.current) return;
-
-    if (isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    } else {
-      try {
-        recognitionRef.current.start();
-        setIsListening(true);
-      } catch {
-        setIsListening(false);
-      }
-    }
+    if (isListening) dictation.stop();
+    else dictation.start();
   };
 
-  // Contar palabras reales
-  const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
+  const handleSubmit = () => {
+    if (isListening) dictation.stop();
+    setInterim("");
+    onSubmit(value.trim());
+  };
+
+  const notice =
+    dictation.state === "denied"
+      ? writer.dictation.denied
+      : dictation.state === "unavailable"
+        ? writer.dictation.unavailable
+        : dictation.state === "error"
+          ? writer.dictation.error
+          : null;
+
+  const wordCount = value.trim() ? value.trim().split(/\s+/).length : 0;
 
   return (
-    <div className="bg-surface rounded-xl border border-border/30 p-5 md:p-6 transition-all duration-small shadow-xs relative">
-      {/* Área de texto serena */}
-      <textarea
-        value={content}
-        onChange={(e) => onChangeContent(e.target.value)}
-        placeholder={writer.placeholder}
-        rows={5}
-        className="w-full bg-transparent font-voice text-lg md:text-xl text-foreground placeholder:text-subtle focus:outline-none resize-none leading-relaxed"
-      />
+    <div className="space-y-3">
+      <div ref={sheetRef} className="relative rounded-xl border border-border/30 bg-surface p-5 shadow-xs transition-all duration-small md:p-6">
+        <label htmlFor="writer-sheet" className="sr-only">
+          Tu hoja: escribe lo que quieras
+        </label>
+        <textarea
+          id="writer-sheet"
+          value={value}
+          onChange={(e) => {
+            setInterim("");
+            onChangeContent(e.target.value);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && value.trim()) {
+              e.preventDefault();
+              handleSubmit();
+            }
+          }}
+          placeholder={placeholder}
+          rows={5}
+          className="w-full resize-none bg-transparent font-voice text-lg leading-relaxed text-foreground placeholder:text-subtle focus:outline-none md:text-xl"
+        />
 
-      {/* Barra de herramientas inferior (Sección 6 de DESIGN.md) */}
-      <div className="pt-4 border-t border-border/20 flex flex-wrap items-center justify-between gap-3 select-none">
-        {/* Lado izquierdo: Micrófono y Candado transformables */}
-        <div className="flex items-center gap-2">
-          {/* Botón de Dictado (Web Speech API) */}
-          {speechSupported && (
+        <div className="flex select-none flex-wrap items-center justify-between gap-3 border-t border-border/20 pt-4">
+          <div className="flex items-center gap-2">
+            {dictation.supported && (
+              <button
+                type="button"
+                onClick={toggleListening}
+                aria-label={isListening ? writer.dictation.stop : writer.dictation.start}
+                aria-pressed={isListening}
+                className={`inline-flex h-11 min-w-11 cursor-pointer items-center justify-center gap-2 rounded-full border px-3 text-xs font-medium transition-all duration-indicator ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
+                  isListening
+                    ? "border-voice bg-voice text-voice-foreground"
+                    : "border-border/40 bg-surface-raised text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {isListening ? (
+                  <>
+                    <MicOff size={15} aria-hidden="true" />
+                    <span className="font-semibold">{writer.listening}</span>
+                  </>
+                ) : (
+                  <Mic size={15} aria-hidden="true" />
+                )}
+              </button>
+            )}
+
             <button
+              ref={privateRef}
               type="button"
-              onClick={toggleListening}
-              aria-label={isListening ? "Detener dictado" : "Iniciar dictado por voz"}
-              className={`inline-flex items-center gap-2 h-9 px-3 rounded-full text-xs font-medium border transition-all duration-indicator ease-out cursor-pointer active:scale-[0.97] ${
-                isListening
-                  ? "bg-voice text-voice-foreground border-voice animate-pulse"
-                  : "bg-surface-raised border-border/40 text-muted-foreground hover:text-foreground"
+              onClick={onTogglePrivate}
+              aria-pressed={isPrivate}
+              aria-label="Nota privada"
+              title="Solo tú la lees: ni Replica ni tu psicólogo"
+              className={`inline-flex h-11 min-w-11 cursor-pointer items-center justify-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-all duration-indicator ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
+                isPrivate
+                  ? "border-voice bg-surface-raised font-semibold text-voice shadow-xs"
+                  : "border-border/40 bg-surface-raised text-muted-foreground hover:text-foreground"
               }`}
             >
-              {isListening ? (
-                <>
-                  <MicOff size={15} />
-                  <span className="font-semibold">{writer.listening}</span>
-                </>
-              ) : (
-                <Mic size={15} />
-              )}
+              {isPrivate ? <Lock size={14} aria-hidden="true" /> : <Unlock size={14} aria-hidden="true" />}
+              {isPrivate ? <span>{writer.privateBadge}</span> : null}
             </button>
-          )}
+          </div>
 
-          {/* Candado "Privada" transformable (Sección 6: suma 'Privada' y crece) */}
-          <button
-            type="button"
-            onClick={onTogglePrivate}
-            title={writer.privateTooltip}
-            className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-xs font-medium border transition-all duration-indicator ease-out cursor-pointer active:scale-[0.97] ${
-              isPrivate
-                ? "bg-surface-raised border-voice text-voice font-semibold shadow-xs"
-                : "bg-surface-raised border-border/40 text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {isPrivate ? <Lock size={14} className="text-voice" /> : <Unlock size={14} />}
-            <span>{isPrivate ? writer.privateBadge : "Pública"}</span>
-          </button>
-        </div>
-
-        {/* Lado derecho: Contador y Botón principal */}
-        <div className="flex items-center gap-3 ml-auto">
-          {/* Contador de palabras */}
-          <span className="text-xs text-subtle font-mono">
-            {wordCount} {writer.wordsSuffix}
-          </span>
-
-          {/* Botón principal: "Replica" o "Guardar" */}
-          <Button
-            type="button"
-            variant="primary"
-            size="normal"
-            disabled={loading || !content.trim()}
-            onClick={onSubmit}
-            icon={isPrivate ? <Save size={16} /> : <Sparkles size={16} />}
-          >
-            {isPrivate ? writer.actions.save : writer.actions.replica}
-          </Button>
+          <div ref={actionRef} className="ml-auto flex items-center gap-3">
+            <span className="text-xs text-subtle">
+              {wordCount} {wordCount === 1 ? "palabra" : writer.wordsSuffix}
+            </span>
+            <Button
+              type="button"
+              variant="primary"
+              size="normal"
+              disabled={loading || !value.trim()}
+              onClick={handleSubmit}
+              icon={action === "guardar" ? <Save size={16} /> : <Sparkles size={16} />}
+              aria-label={action === "replica" ? "Replica: guarda tu nota y Replica te responde" : "Guardar tu nota en tu diario"}
+            >
+              {action === "replica" ? writer.actions.replica : writer.actions.save}
+            </Button>
+          </div>
         </div>
       </div>
+
+      {notice ? (
+        <div className="flex flex-wrap items-center gap-3 px-1" role="status">
+          <p className="text-[13px] leading-[18px] text-muted-foreground">{notice}</p>
+          <button
+            type="button"
+            onClick={dictation.reset}
+            className="min-h-11 rounded-full px-3 text-[13px] font-medium text-voice hover:bg-voice-soft/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice"
+          >
+            {writer.dictation.dismiss}
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 };

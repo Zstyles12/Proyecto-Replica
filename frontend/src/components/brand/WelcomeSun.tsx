@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useId } from "react";
 
 /**
- * Sol de Bienvenida de Replica (1:1 con zairo-main/welcome-garden.tsx y docs/DESIGN.md).
+ * Sol de Bienvenida de Replica (1:1 con replica mobile/zairo/welcome-garden.tsx y docs/DESIGN.md).
  *
  * Ubicado en la esquina superior izquierda de la pantalla de bienvenida.
  * Emerge armónicamente en la etapa de flor (etapa 2):

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500&family=Alegreya:ital,wght@0,400;0,500;1,400&display=swap');
+/* Las fuentes (Alegreya y Alegreya Sans) se cargan una sola vez, en index.html. */
 
 @tailwind base;
 @tailwind components;
@@ -15,6 +15,7 @@
   --emotion: #A04B2F; --emotion-foreground: #FFFFFF; --emotion-soft: #FFDBD0;
   --destructive: #BA1A1A; --destructive-foreground: #FFFFFF;
   --sun: #E9AE1C; --sun-soft: #FFF0B8;
+  --cloth-1: #86BDA4; --cloth-2: #3A7059; --cloth-3: #244A3B;
   --mood-paz: #2A8A6A; --mood-alegria: #B07D00; --mood-gratitud: #D1567E;
   --mood-reflexion: #2477B8; --mood-cansancio: #A4417A; --mood-ansiedad: #D4502C;
   --mood-tristeza: #4A62B8;
@@ -30,6 +31,7 @@
   --emotion: #F3B8B3; --emotion-foreground: #4B2623; --emotion-soft: #5C3431;
   --destructive: #FFB4AB; --destructive-foreground: #690005;
   --sun: #F4C85A; --sun-soft: #3E3417;
+  --cloth-1: #2A5444; --cloth-2: #6FAE94; --cloth-3: #A7CFBE;
   --mood-paz: #34A07A; --mood-alegria: #BF8A00; --mood-gratitud: #DB6A90;
   --mood-reflexion: #3B8BD0; --mood-cansancio: #B04D86; --mood-ansiedad: #DD6630;
   --mood-tristeza: #6A80D6;
@@ -47,6 +49,7 @@
     --emotion: #F3B8B3; --emotion-foreground: #4B2623; --emotion-soft: #5C3431;
     --destructive: #FFB4AB; --destructive-foreground: #690005;
     --sun: #F4C85A; --sun-soft: #3E3417;
+    --cloth-1: #2A5444; --cloth-2: #6FAE94; --cloth-3: #A7CFBE;
     --mood-paz: #34A07A; --mood-alegria: #BF8A00; --mood-gratitud: #DB6A90;
     --mood-reflexion: #3B8BD0; --mood-cansancio: #B04D86; --mood-ansiedad: #DD6630;
     --mood-tristeza: #6A80D6;
@@ -74,7 +77,10 @@
   );
 }
 
-/* Transición de sección (Sección 7.2 de DESIGN.md: fundido cruzado de 220 ms, la nueva sube 8 px) */
+/* Transición de sección (Sección 7.2 de DESIGN.md: fundido cruzado de 220 ms, la nueva sube 8 px).
+   Termina en `transform: none` y sin quedarse aplicada: un `transform` que sigue puesto convierte al
+   contenedor en la referencia de todo lo `position: fixed` que lleva dentro, y las ventanas quedaban
+   centradas en la página entera en vez de en la pantalla. */
 @keyframes sectionEnter {
   from {
     opacity: 0;
@@ -82,12 +88,12 @@
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
   }
 }
 
 .animate-section-enter {
-  animation: sectionEnter 220ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  animation: sectionEnter 220ms cubic-bezier(0.23, 1, 0.32, 1) backwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -96,6 +102,243 @@
     opacity: 1;
     transform: none;
   }
+}
+
+/* Ventanas y hojas (components/ui/Dialog.tsx, DESIGN-WEB.md §5).
+   En el teléfono la hoja sube desde abajo (300 ms, como las hojas de la app); desde 768 px la
+   ventana sube 10 px y aparece (280 ms). Las salidas siempre más rápidas (180 ms). */
+@keyframes dialogFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes dialogFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes sheetIn {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+@keyframes sheetOut {
+  from { transform: none; }
+  to { transform: translateY(100%); }
+}
+@keyframes dialogIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes dialogOut {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(6px) scale(0.98); }
+}
+
+.dialog-backdrop {
+  animation: dialogFadeIn 280ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+.dialog-panel {
+  animation: sheetIn 300ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+.dialog-root[data-state="closed"] .dialog-backdrop {
+  animation: dialogFadeOut 180ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+.dialog-root[data-state="closed"] .dialog-panel {
+  animation: sheetOut 180ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+@media (min-width: 768px) {
+  .dialog-panel {
+    animation: dialogIn 280ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  }
+  .dialog-root[data-state="closed"] .dialog-panel {
+    animation: dialogOut 180ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog-panel {
+    animation: dialogFadeIn 180ms linear both;
+  }
+  .dialog-root[data-state="closed"] .dialog-panel {
+    animation: dialogFadeOut 120ms linear both;
+  }
+}
+
+/* La marca se teje (DESIGN.md §7.3): la ida en salvia y, cuando va por la mitad, la vuelta en malva. */
+.logo-weave .logo-ida,
+.logo-weave .logo-vuelta {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: logoDraw 900ms cubic-bezier(0.77, 0, 0.175, 1) 250ms forwards;
+}
+.logo-weave .logo-vuelta {
+  animation-delay: 880ms;
+}
+@keyframes logoDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* La racha brota al pasar a la etapa siguiente: sube 4 px y crece desde su base (420 ms). */
+.growth-sprout {
+  transform-origin: 50% 85%;
+  animation: growthSprout 420ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+@keyframes growthSprout {
+  from { opacity: 0; transform: translateY(4px) scale(0.6); }
+  to { opacity: 1; transform: none; }
+}
+
+/* El código que no coincide: las casillas tiemblan (DESIGN.md §6, Registro). */
+.code-shake {
+  animation: codeShake 380ms cubic-bezier(0.77, 0, 0.175, 1);
+}
+@keyframes codeShake {
+  0%, 100% { transform: none; }
+  15% { transform: translateX(-8px); }
+  38% { transform: translateX(8px); }
+  62% { transform: translateX(-8px); }
+  85% { transform: translateX(8px); }
+}
+
+/* El cursor de la casilla que sigue late despacio. */
+.code-caret {
+  animation: codeCaret 1040ms cubic-bezier(0.77, 0, 0.175, 1) infinite;
+}
+@keyframes codeCaret {
+  50% { opacity: 0.15; }
+}
+
+/* Entrada de contenido (DESIGN.md §7.2): sube 10 px y aparece, escalonado 50 ms. */
+.enter {
+  animation: enterUp 280ms cubic-bezier(0.23, 1, 0.32, 1) backwards;
+  animation-delay: calc(var(--enter-index, 0) * 50ms);
+}
+@keyframes enterUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-weave .logo-ida,
+  .logo-weave .logo-vuelta {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .growth-sprout,
+  .code-shake,
+  .code-caret {
+    animation: none;
+  }
+  .enter {
+    animation-name: dialogFadeIn;
+  }
+}
+
+/* El aura de la réplica: halo malva que respira (5,2 s) solo mientras la IA escribe. */
+.ai-aura {
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--reply) 55%, transparent) 0%,
+    color-mix(in srgb, var(--reply) 16%, transparent) 55%,
+    transparent 100%
+  );
+  opacity: 0;
+  transform: scale(0.85);
+  transition: opacity 180ms cubic-bezier(0.23, 1, 0.32, 1), transform 180ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.ai-aura-active {
+  animation: aiBreath 5.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+@keyframes aiBreath {
+  0%, 100% { opacity: 0.5; transform: scale(0.72); }
+  50% { opacity: 0.9; transform: scale(1); }
+}
+
+/* Cada palabra de la réplica aparece con un fundido corto. */
+.word-in {
+  animation: wordIn 280ms cubic-bezier(0.23, 1, 0.32, 1) backwards;
+}
+@keyframes wordIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Al pedir la réplica, la hoja se pliega hacia arriba (DESIGN.md §7.2). */
+.sheet-fold {
+  animation: sheetFold 260ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+@keyframes sheetFold {
+  to { opacity: 0; transform: translateY(-12px) scale(0.97); }
+}
+
+/* "Escribiendo…": tres puntos que laten despacio, sin rebotes. */
+.typing-dot {
+  animation: typingDot 1080ms cubic-bezier(0.77, 0, 0.175, 1) infinite;
+}
+@keyframes typingDot {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* Paneles bajo un botón (DESIGN.md §7.2): bajan 6 px al aparecer (280 ms). */
+.panel-in {
+  animation: panelIn 280ms cubic-bezier(0.23, 1, 0.32, 1) backwards;
+}
+@keyframes panelIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* La pastilla que falta late una vez cuando Replica la pregunta. */
+.pill-pulse {
+  animation: pillPulse 420ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@keyframes pillPulse {
+  40% { transform: scale(1.06); }
+  100% { transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel-in,
+  .pill-pulse,
+  .reply-in {
+    animation: none;
+  }
+}
+
+/* La réplica entra encima de la nota plegada: sube 12 px y aparece (320 ms). */
+.reply-in {
+  animation: replyIn 320ms cubic-bezier(0.23, 1, 0.32, 1) backwards;
+}
+@keyframes replyIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* La pasada del hilo (DESIGN.md §7.3): un hilo salvia cruza y regresa en malva. */
+.thread-pass {
+  transform-origin: left center;
+  animation: threadIda 420ms cubic-bezier(0.77, 0, 0.175, 1) forwards;
+}
+.thread-pass-back {
+  transform-origin: right center;
+  animation: threadVuelta 420ms cubic-bezier(0.77, 0, 0.175, 1) 260ms both;
+}
+@keyframes threadIda {
+  0% { transform: scaleX(0); opacity: 1; }
+  70% { transform: scaleX(1); opacity: 1; }
+  100% { transform: scaleX(1); opacity: 0; }
+}
+@keyframes threadVuelta {
+  0% { transform: scaleX(0); opacity: 1; }
+  70% { transform: scaleX(1); opacity: 1; }
+  100% { transform: scaleX(1); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-aura-active { animation: none; opacity: 0.6; transform: none; }
+  .word-in { animation: none; }
+  .sheet-fold { animation: dialogFadeOut 180ms linear forwards; }
+  .thread-pass, .thread-pass-back { animation: none; opacity: 0; }
 }
 
 /* El aura malva que respira lento (Sección 7.3 de DESIGN.md: ciclo de 5,2 s) */
@@ -131,7 +374,7 @@
   }
 }
 
-/* Animaciones de AnimatedHeart (1:1 con zairo-main/components/motion/heart.tsx) */
+/* Animaciones de AnimatedHeart (1:1 con replica mobile/zairo/components/motion/heart.tsx) */
 @keyframes heartPop {
   0% {
     transform: scale(1);
@@ -229,3 +472,39 @@
   }
 }
 
+
+/* El foco del recorrido se desliza de un elemento al siguiente (DESIGN.md §6, Recorridos). */
+.tour-cut {
+  transition-property: left, top, width, height, border-radius;
+  transition-duration: 250ms;
+  transition-timing-function: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* Reducir movimiento (DESIGN.md §7.2): al final del archivo para que gane sobre todo lo anterior.
+   Quedan solo los fundidos; se quitan desplazamientos, giros, escalas y rebotes. */
+@media (prefers-reduced-motion: reduce) {
+  .reply-in,
+  .panel-in,
+  .pill-pulse,
+  .word-in,
+  .growth-sprout,
+  .code-shake,
+  .typing-dot,
+  .animate-malva-aura,
+  .animate-heart-pop,
+  .animate-heart-break-left,
+  .animate-heart-break-right,
+  .animate-burst-dot {
+    animation: none !important;
+  }
+  .animate-section-enter,
+  .enter {
+    animation-name: dialogFadeIn !important;
+  }
+  .tour-cut {
+    transition: none;
+  }
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+}

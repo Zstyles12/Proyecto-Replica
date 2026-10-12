@@ -1,134 +1,97 @@
-import React, { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { lazy, Suspense } from "react";
+import { BrowserRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { MainLayout } from "./components/layout/MainLayout";
+import { TourHost } from "./components/tour/TourHost";
+import { useStage } from "./lib/session";
 import { Inicio } from "./pages/Inicio";
 import { Notas } from "./pages/Notas";
-import { Evolucion } from "./pages/Evolucion";
-import { Chat } from "./pages/Chat";
-import { Usuario } from "./pages/Usuario";
-import { Playground } from "./pages/Playground";
-import { AuthFlow } from "./pages/auth/AuthFlow";
-import { authService, type AuthSession } from "./services/auth";
-import { unlockAudio } from "./lib/sounds";
+import { NotaDetalle } from "./pages/NotaDetalle";
+import { TuDia } from "./pages/TuDia";
 
-function RequireAuth({ children }: { children: React.ReactNode }) {
-  const session = authService.getSession();
-  if (!session || !session.user.isConfigured) {
-    return <Navigate to="/auth" replace />;
-  }
-  return <>{children}</>;
+
+// Se cargan aparte: el registro (con la planta animada) solo lo descarga quien llega nuevo, y la app
+// solo quien ya tiene cuenta. Inicio, Notas y sus detalles van en el paquete principal.
+const Bienvenida = lazy(() => import("./pages/auth/Bienvenida").then((m) => ({ default: m.Bienvenida })));
+const Codigo = lazy(() => import("./pages/auth/Cuenta").then((m) => ({ default: m.Codigo })));
+const Contrasena = lazy(() => import("./pages/auth/Cuenta").then((m) => ({ default: m.Contrasena })));
+const Correo = lazy(() => import("./pages/auth/Cuenta").then((m) => ({ default: m.Correo })));
+const Entrar = lazy(() => import("./pages/auth/Cuenta").then((m) => ({ default: m.Entrar })));
+const Configurar = lazy(() => import("./pages/auth/Configuracion").then((m) => ({ default: m.Configurar })));
+const Consentimiento = lazy(() => import("./pages/auth/Configuracion").then((m) => ({ default: m.Consentimiento })));
+const Listo = lazy(() => import("./pages/auth/Configuracion").then((m) => ({ default: m.Listo })));
+const Evolucion = lazy(() => import("./pages/Evolucion").then((m) => ({ default: m.Evolucion })));
+const Chat = lazy(() => import("./pages/Chat").then((m) => ({ default: m.Chat })));
+const Directorio = lazy(() => import("./pages/Directorio").then((m) => ({ default: m.Directorio })));
+const PsicologoPerfil = lazy(() => import("./pages/PsicologoPerfil").then((m) => ({ default: m.PsicologoPerfil })));
+const Usuario = lazy(() => import("./pages/Usuario").then((m) => ({ default: m.Usuario })));
+const SoyPsicologo = lazy(() => import("./pages/SoyPsicologo").then((m) => ({ default: m.SoyPsicologo })));
+const Cofre = lazy(() => import("./pages/Cofre").then((m) => ({ default: m.Cofre })));
+const Playground = lazy(() => import("./pages/Playground").then((m) => ({ default: m.Playground })));
+const Legal = lazy(() => import("./pages/Legal").then((m) => ({ default: m.Legal })));
+
+function ConfigurarRoute() {
+  const navigate = useNavigate();
+  return <Configurar onFinish={() => navigate("/listo", { replace: true })} />;
 }
 
-function RedirectIfAuth({ children }: { children: React.ReactNode }) {
-  const session = authService.getSession();
-  if (session && session.user.isConfigured) {
-    return <Navigate to="/" replace />;
-  }
-  return <>{children}</>;
-}
-
+// Cada etapa solo ve sus pantallas (lib/session.ts): sin cuenta, la bienvenida y la cuenta; con
+// cuenta, el consentimiento; después la configuración; y al final la app. Cualquier otra dirección
+// lleva a la pantalla que toca. Términos y Privacidad se pueden abrir siempre.
 export function App() {
-  const [, setSessionState] = useState<AuthSession | null>(() =>
-    authService.getSession()
-  );
-
-  useEffect(() => {
-    return authService.subscribe(() => {
-      setSessionState(authService.getSession());
-    });
-  }, []);
-
-  // Pre-calentar y desbloquear el contexto de audio en la primera interacción del usuario
-  useEffect(() => {
-    const handleFirstGesture = () => {
-      unlockAudio();
-      window.removeEventListener("pointerdown", handleFirstGesture);
-      window.removeEventListener("keydown", handleFirstGesture);
-      window.removeEventListener("click", handleFirstGesture);
-    };
-
-    window.addEventListener("pointerdown", handleFirstGesture, { once: true, passive: true });
-    window.addEventListener("keydown", handleFirstGesture, { once: true, passive: true });
-    window.addEventListener("click", handleFirstGesture, { once: true, passive: true });
-
-    return () => {
-      window.removeEventListener("pointerdown", handleFirstGesture);
-      window.removeEventListener("keydown", handleFirstGesture);
-      window.removeEventListener("click", handleFirstGesture);
-    };
-  }, []);
+  const stage = useStage();
 
   return (
     <BrowserRouter>
+      <Suspense fallback={<div className="min-h-screen bg-background" />}>
       <Routes>
-        {/* Ruta de Onboarding y Autenticación */}
-        <Route
-          path="/auth"
-          element={
-            <RedirectIfAuth>
-              <AuthFlow />
-            </RedirectIfAuth>
-          }
-        />
+        <Route path="/legal/:doc" element={<Legal />} />
+        {import.meta.env.DEV ? <Route path="/playground" element={<Playground />} /> : null}
 
-        {/* 5 Secciones principales protegidas por autenticación */}
-        <Route
-          path="/"
-          element={
-            <RequireAuth>
-              <MainLayout>
-                <Inicio />
-              </MainLayout>
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/notas"
-          element={
-            <RequireAuth>
-              <MainLayout>
-                <Notas />
-              </MainLayout>
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/evolucion"
-          element={
-            <RequireAuth>
-              <MainLayout>
-                <Evolucion />
-              </MainLayout>
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/chat"
-          element={
-            <RequireAuth>
-              <MainLayout>
-                <Chat />
-              </MainLayout>
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/usuario"
-          element={
-            <RequireAuth>
-              <MainLayout>
-                <Usuario />
-              </MainLayout>
-            </RequireAuth>
-          }
-        />
+        {stage === "auth" ? (
+          <>
+            <Route path="/bienvenida" element={<Bienvenida />} />
+            <Route path="/entrar" element={<Entrar />} />
+            <Route path="/correo" element={<Correo />} />
+            <Route path="/contrasena" element={<Contrasena />} />
+            <Route path="/codigo" element={<Codigo />} />
+            <Route path="*" element={<Navigate to="/bienvenida" replace />} />
+          </>
+        ) : null}
 
-        {/* Ruta de desarrollo y auditoría visual (siempre accesible) */}
-        <Route path="/playground" element={<Playground />} />
+        {stage === "consent" ? (
+          <>
+            <Route path="/consentimiento" element={<Consentimiento />} />
+            <Route path="*" element={<Navigate to="/consentimiento" replace />} />
+          </>
+        ) : null}
 
-        {/* Redirección por defecto */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {stage === "setup" ? (
+          <>
+            <Route path="/configurar" element={<ConfigurarRoute />} />
+            <Route path="/listo" element={<Listo />} />
+            <Route path="*" element={<Navigate to="/configurar" replace />} />
+          </>
+        ) : null}
+
+        {stage === "app" ? (
+          <Route element={<MainLayout />}>
+            <Route path="/" element={<Inicio />} />
+            <Route path="/notas" element={<Notas />} />
+            <Route path="/notas/:id" element={<NotaDetalle />} />
+            <Route path="/replica-dia/:dia" element={<TuDia />} />
+            <Route path="/evolucion" element={<Evolucion />} />
+            <Route path="/chat" element={<Chat />} />
+            <Route path="/chat/directorio" element={<Directorio />} />
+            <Route path="/psicologo/:id" element={<PsicologoPerfil />} />
+            <Route path="/usuario" element={<Usuario />} />
+            <Route path="/usuario/psicologo" element={<SoyPsicologo />} />
+            <Route path="/cofre" element={<Cofre />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        ) : null}
       </Routes>
+      </Suspense>
+      {stage === "app" ? <TourHost /> : null}
     </BrowserRouter>
   );
 }

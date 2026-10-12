@@ -57,6 +57,7 @@ export const BottomNav: React.FC = () => {
             <Link
               key={item.id}
               to={item.path}
+              aria-current={isActive ? "page" : undefined}
               className={`flex-1 flex flex-col items-center justify-center h-full relative transition-colors duration-small ${
                 isActive ? "text-voice font-semibold" : "text-muted-foreground hover:text-foreground"
               }`}

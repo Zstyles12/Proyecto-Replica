@@ -57,7 +57,7 @@ npm run build                            # tipos + build de producción
 - Español neutro, trato de tú, frases cortas, sin culpa ni presión. Nunca clínico ni gamificado.
 - Usa el vocabulario de `DESIGN.md` §9 (réplica, réplica del día, última réplica, notas de tu día, cofre, destilado por Replica, tela, hoja, nota privada).
 - **Copia los textos de la app** cuando la pantalla existe allá. No escribas textos nuevos si la app ya tiene uno para lo mismo.
-- Los textos de cada pantalla viven en `frontend/src/data/*Content.ts`, nunca sueltos en los componentes.
+- Los textos van donde los tiene la app: junto a la pantalla o la pieza que los usa (así se comparan línea por línea con la app). Los que comparten varias pantallas o son contenido largo van en `frontend/src/data/` (textos legales, bienvenida, navegación).
 - Nunca se muestra al usuario texto técnico (nombres de archivos, versiones, valores como "0.55", nombres de modelos).
 - Sin emojis en la interfaz: los íconos son de Lucide o los dibujos propios de la marca.
 - Errores y avisos nunca en rojo: los avisos amables van en la voz de Replica (malva, itálica) y los fallos reales en `emotion`. `destructive` es solo para borrar algo.

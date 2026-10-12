@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
-import type { ClothDay } from "../../../services/metrics";
-import { PLAYGROUND_CONTENT } from "../../../data/playgroundContent";
+import type { ClothDay } from "../../profile/metrics";
+import { MOOD_ITEMS } from "../../journal/moods";
 import { EVOLUCION_CONTENT } from "../../../data/evolucionContent";
 
 interface WovenClothProps {
@@ -11,7 +11,7 @@ export const WovenCloth: React.FC<WovenClothProps> = ({ columns }) => {
   const [hoveredDay, setHoveredDay] = useState<ClothDay | null>(null);
   const [selectedDay, setSelectedDay] = useState<ClothDay | null>(null);
 
-  const moods = PLAYGROUND_CONTENT.moods;
+  const moods = MOOD_ITEMS;
   const { cloth: copy } = EVOLUCION_CONTENT;
   const rowLabels = copy.dayLabels || { 0: "L", 2: "X", 4: "V", 6: "D" };
 
@@ -30,14 +30,6 @@ export const WovenCloth: React.FC<WovenClothProps> = ({ columns }) => {
     () => columns.flat().filter((d) => !d.future && d.count > 0).length,
     [columns]
   );
-  const totalNotes = useMemo(
-    () =>
-      columns
-        .flat()
-        .filter((d) => !d.future)
-        .reduce((acc, d) => acc + d.count, 0),
-    [columns]
-  );
 
   const activeDay = hoveredDay || selectedDay;
 
@@ -46,12 +38,12 @@ export const WovenCloth: React.FC<WovenClothProps> = ({ columns }) => {
     if (day.future) return "bg-surface-sunken/40 border-border/10 opacity-30 cursor-default";
     const base =
       day.count === 0
-        ? "bg-surface-sunken border-border/30 hover:border-border"
+        ? "bg-transparent border-border/60 hover:border-border"
         : day.count === 1
-        ? "bg-voice-soft/60 border-voice/40 hover:border-voice"
+        ? "bg-cloth-1 border-cloth-1"
         : day.count === 2
-        ? "bg-voice-soft border-voice/60 hover:border-voice"
-        : "bg-voice border-voice shadow-xs";
+        ? "bg-cloth-2 border-cloth-2"
+        : "bg-cloth-3 border-cloth-3";
 
     if (isActive) {
       return `${base} ring-2 ring-voice ring-offset-2 ring-offset-surface-raised scale-110 z-10`;
@@ -130,10 +122,10 @@ export const WovenCloth: React.FC<WovenClothProps> = ({ columns }) => {
           <div className="flex items-center justify-between text-[11px] text-subtle pt-2 border-t border-border/20 max-w-[340px]">
             <span>Menos notas</span>
             <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-[3px] bg-surface-sunken border border-border/30" />
-              <span className="w-3 h-3 rounded-[3px] bg-voice-soft/60 border border-voice/40" />
-              <span className="w-3 h-3 rounded-[3px] bg-voice-soft border border-voice/60" />
-              <span className="w-3 h-3 rounded-[3px] bg-voice border border-voice" />
+              <span className="w-3 h-3 rounded-[3px] border border-border/60" />
+              <span className="w-3 h-3 rounded-[3px] bg-cloth-1" />
+              <span className="w-3 h-3 rounded-[3px] bg-cloth-2" />
+              <span className="w-3 h-3 rounded-[3px] bg-cloth-3" />
             </div>
             <span>Más notas</span>
           </div>
@@ -145,7 +137,7 @@ export const WovenCloth: React.FC<WovenClothProps> = ({ columns }) => {
             <div className="space-y-2 animate-section-enter">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-semibold text-voice uppercase tracking-wider">
-                  {selectedDay === activeDay ? "Hilo fijado" : "Detalle del hilo"}
+                  {selectedDay === activeDay ? "Día elegido" : "Este día"}
                 </span>
                 {selectedDay === activeDay && (
                   <button
@@ -153,7 +145,7 @@ export const WovenCloth: React.FC<WovenClothProps> = ({ columns }) => {
                     onClick={() => setSelectedDay(null)}
                     className="text-[11px] text-muted-foreground hover:text-foreground underline cursor-pointer"
                   >
-                    Restablecer
+                    Quitar
                   </button>
                 )}
               </div>
@@ -162,7 +154,7 @@ export const WovenCloth: React.FC<WovenClothProps> = ({ columns }) => {
               </h4>
               <p className="font-voice text-xs text-muted-foreground">
                 {activeDay.future
-                  ? "Día futuro en el telar"
+                  ? ""
                   : activeDay.count === 0
                   ? "Sin notas escritas este día"
                   : activeDay.count === 1
@@ -198,17 +190,11 @@ export const WovenCloth: React.FC<WovenClothProps> = ({ columns }) => {
             </div>
           ) : (
             <div className="space-y-2 animate-section-enter">
-              <span className="text-[11px] font-semibold text-voice uppercase tracking-wider">
-                Telar de constancia
-              </span>
               <h4 className="font-replica text-base md:text-lg font-normal text-foreground">
-                {totalNotes} {totalNotes === 1 ? "nota tejida" : "notas tejidas"}
+                Escribiste {activeDaysCount} de los últimos 84 días.
               </h4>
-              <p className="font-voice text-xs text-muted-foreground leading-relaxed">
-                {activeDaysCount} {activeDaysCount === 1 ? "día con escritura" : "días con escritura"} en las últimas 12 semanas.
-              </p>
               <p className="font-voice text-[11px] text-subtle pt-1">
-                Posa el cursor o pulsa cualquier hilo para ver el detalle de ese día.
+                Pasa el cursor o toca un día para ver su detalle.
               </p>
             </div>
           )}

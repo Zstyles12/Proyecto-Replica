@@ -1,6 +1,6 @@
 /**
  * El cofre: un baúl de tapa curva con un corazón en terracota (emotion) al frente.
- * Mismo trazo (2 px) y geometría exacta que la app móvil (zairo-main/components/brand/cofre-icon.tsx).
+ * Mismo trazo (2 px) y geometría exacta que la app móvil (replica mobile/zairo/components/brand/cofre-icon.tsx).
  */
 export function CofreIcon({
   size = 24,

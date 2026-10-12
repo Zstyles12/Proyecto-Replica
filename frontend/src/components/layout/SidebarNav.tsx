@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { NAVIGATION_CONTENT, type NavItem } from "../../data/navigationContent";
 import { useTheme } from "../../hooks/useTheme";
+import { LogoMark } from "../brand/LogoMark";
 
 const ICON_MAP = {
   Feather,
@@ -44,18 +45,12 @@ export const SidebarNav: React.FC = () => {
       {/* Cabecera / Marca */}
       <div className="space-y-6">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-voice-soft text-voice flex items-center justify-center shrink-0">
-            <span className="text-base" aria-label={NAVIGATION_CONTENT.brand.avatarAria}>
-              🌱
-            </span>
-          </div>
+          <LogoMark size={36} />
           <div>
             <span className="font-replica text-2xl font-normal tracking-tight text-foreground block leading-tight">
               {NAVIGATION_CONTENT.brand.name}
             </span>
-            <span className="font-voice text-xs text-muted-foreground block">
-              {NAVIGATION_CONTENT.brand.tagline}
-            </span>
+            
           </div>
         </div>
 
@@ -70,6 +65,7 @@ export const SidebarNav: React.FC = () => {
               <Link
                 key={item.id}
                 to={item.path}
+                aria-current={isActive ? "page" : undefined}
                 className={`flex items-center gap-3 px-3.5 py-2.5 rounded-full text-sm transition-all duration-small relative ${
                   isActive
                     ? "bg-voice-soft/25 text-voice font-semibold"
@@ -92,13 +88,14 @@ export const SidebarNav: React.FC = () => {
       <div className="space-y-4 pt-4 border-t border-border/20">
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>Tema</span>
-          <div className="inline-flex p-0.5 rounded-full bg-surface-sunken border border-border/30">
+          <div role="group" aria-label="Tema" className="inline-flex p-0.5 rounded-full bg-surface-sunken border border-border/30">
             <button
               type="button"
               onClick={() => setTheme("light")}
+              aria-pressed={theme === "light"}
               title="Tema claro"
               aria-label="Tema claro"
-              className={`p-1.5 rounded-full transition-colors ${
+              className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
                 theme === "light"
                   ? "bg-surface-raised text-foreground shadow-xs font-semibold"
                   : "text-muted-foreground hover:text-foreground"
@@ -109,9 +106,10 @@ export const SidebarNav: React.FC = () => {
             <button
               type="button"
               onClick={() => setTheme("dark")}
+              aria-pressed={theme === "dark"}
               title="Tema oscuro"
               aria-label="Tema oscuro"
-              className={`p-1.5 rounded-full transition-colors ${
+              className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
                 theme === "dark"
                   ? "bg-surface-raised text-foreground shadow-xs font-semibold"
                   : "text-muted-foreground hover:text-foreground"
@@ -122,9 +120,10 @@ export const SidebarNav: React.FC = () => {
             <button
               type="button"
               onClick={() => setTheme("system")}
+              aria-pressed={theme === "system"}
               title="Tema del sistema"
               aria-label="Tema del sistema"
-              className={`p-1.5 rounded-full transition-colors ${
+              className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
                 theme === "system"
                   ? "bg-surface-raised text-foreground shadow-xs font-semibold"
                   : "text-muted-foreground hover:text-foreground"
@@ -135,6 +134,7 @@ export const SidebarNav: React.FC = () => {
           </div>
         </div>
 
+        {import.meta.env.DEV ? (
         <Link
           to="/playground"
           className="flex items-center gap-2 text-xs text-subtle hover:text-voice transition-colors py-1 px-1.5 rounded-md hover:bg-surface"
@@ -142,6 +142,7 @@ export const SidebarNav: React.FC = () => {
           <Code2 size={14} />
           <span>{NAVIGATION_CONTENT.footerLinks.playground}</span>
         </Link>
+        ) : null}
       </div>
     </aside>
   );

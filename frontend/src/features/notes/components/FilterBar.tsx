@@ -1,252 +1,172 @@
-import React, { useState, useRef, useEffect } from "react";
-import { ChevronDown, Heart, X, Hash } from "lucide-react";
-import { NOTAS_CONTENT } from "../../../data/notasContent";
-import { PLAYGROUND_CONTENT } from "../../../data/playgroundContent";
+import React, { useState } from "react";
+import { ChevronDown, Heart, SlidersHorizontal, X } from "lucide-react";
+import { MOOD_LABELS, moodColor, type Mood } from "../../journal/moods";
+import type { NoteFilter } from "../filters";
 
-interface FilterBarProps {
-  favoritesOnly: boolean;
-  onToggleFavorites: () => void;
-  selectedMood: string | null;
-  onSelectMood: (m: string | null) => void;
-  selectedTag: string | null;
-  onSelectTag: (t: string | null) => void;
-  favoritesCount: number;
-}
+const scopeClass = (selected: boolean) =>
+  `inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors duration-small focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
+    selected ? "border-voice bg-voice text-voice-foreground" : "border-border/70 text-muted-foreground hover:text-foreground"
+  }`;
 
-export const FilterBar: React.FC<FilterBarProps> = ({
-  favoritesOnly,
-  onToggleFavorites,
-  selectedMood,
-  onSelectMood,
-  selectedTag,
-  onSelectTag,
-  favoritesCount,
-}) => {
-  const [openDropdown, setOpenDropdown] = useState<"mood" | "tag" | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const { filters } = NOTAS_CONTENT;
-  const moods = PLAYGROUND_CONTENT.moods;
-  const tags = PLAYGROUND_CONTENT.themes;
-
-  const hasActiveFilters = favoritesOnly || !!selectedMood || !!selectedTag;
-
-  // Cerrar desplegable al hacer clic fuera
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
-        setOpenDropdown(null);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const activeMoodObj = moods.find((m) => m.id === selectedMood);
-
-  const clearAllFilters = () => {
-    if (favoritesOnly) onToggleFavorites();
-    onSelectMood(null);
-    onSelectTag(null);
-    setOpenDropdown(null);
-  };
-
+function OptionRow({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div ref={containerRef} className="space-y-2 relative z-30 select-none">
-      <div className="flex flex-wrap items-center gap-2">
-        {/* Ámbito: Todas */}
-        <button
-          type="button"
-          onClick={() => {
-            if (favoritesOnly) onToggleFavorites();
-          }}
-          className={`h-8 px-3.5 rounded-full text-xs font-medium cursor-pointer transition-all duration-small active:scale-[0.97] border ${
-            !favoritesOnly
-              ? "bg-voice text-voice-foreground border-voice font-semibold shadow-xs"
-              : "bg-surface-raised hover:bg-surface text-muted-foreground border-border/40"
-          }`}
-        >
-          {filters.all}
-        </button>
-
-        {/* Ámbito: Favoritas */}
-        <button
-          type="button"
-          onClick={onToggleFavorites}
-          className={`h-8 px-3.5 rounded-full text-xs font-medium cursor-pointer transition-all duration-small active:scale-[0.97] border inline-flex items-center gap-1.5 ${
-            favoritesOnly
-              ? "bg-voice text-voice-foreground border-voice font-semibold shadow-xs"
-              : "bg-surface-raised hover:bg-surface text-muted-foreground border-border/40"
-          }`}
-        >
-          <Heart
-            size={12}
-            className={favoritesOnly ? "fill-voice-foreground" : "text-muted-foreground"}
-          />
-          <span>{filters.favorites}</span>
-          {favoritesCount > 0 && (
-            <span
-              className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                favoritesOnly
-                  ? "bg-voice-foreground/20 text-voice-foreground"
-                  : "bg-surface-sunken text-subtle"
-              }`}
-            >
-              {favoritesCount}
-            </span>
-          )}
-        </button>
-
-        {/* Filtro por Ánimo */}
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() =>
-              setOpenDropdown(openDropdown === "mood" ? null : "mood")
-            }
-            style={
-              activeMoodObj
-                ? {
-                    backgroundColor: `color-mix(in srgb, ${activeMoodObj.colorVar} 14%, transparent)`,
-                    borderColor: `color-mix(in srgb, ${activeMoodObj.colorVar} 45%, transparent)`,
-                    color: "var(--foreground)",
-                  }
-                : {}
-            }
-            className={`h-8 px-3 rounded-full text-xs font-medium cursor-pointer transition-all duration-small active:scale-[0.97] border inline-flex items-center gap-1.5 ${
-              activeMoodObj
-                ? "font-semibold shadow-xs"
-                : "bg-surface-raised hover:bg-surface text-muted-foreground border-border/40"
-            }`}
-          >
-            {activeMoodObj ? (
-              <span
-                className="w-2 h-2 rounded-full shrink-0"
-                style={{ backgroundColor: activeMoodObj.colorVar }}
-              />
-            ) : null}
-            <span>{activeMoodObj ? activeMoodObj.name : filters.moodTrigger}</span>
-            <ChevronDown
-              size={12}
-              className={`text-subtle transition-transform duration-200 ${
-                openDropdown === "mood" ? "rotate-180" : ""
-              }`}
-            />
-          </button>
-
-          {/* Menú de Ánimos */}
-          {openDropdown === "mood" && (
-            <div className="absolute left-0 top-full mt-1.5 w-44 p-1.5 rounded-xl bg-surface-raised border border-border/40 shadow-raised z-40 animate-section-enter space-y-0.5">
-              <button
-                type="button"
-                onClick={() => {
-                  onSelectMood(null);
-                  setOpenDropdown(null);
-                }}
-                className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:bg-surface hover:text-foreground transition-colors"
-              >
-                {filters.allMoods}
-              </button>
-              {moods.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => {
-                    onSelectMood(m.id);
-                    setOpenDropdown(null);
-                  }}
-                  className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
-                    selectedMood === m.id
-                      ? "bg-voice-soft/30 text-foreground font-semibold"
-                      : "text-muted-foreground hover:bg-surface hover:text-foreground"
-                  }`}
-                >
-                  <span
-                    className="w-2 h-2 rounded-full shrink-0"
-                    style={{ backgroundColor: m.colorVar }}
-                  />
-                  <span>{m.name}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Filtro por Tema */}
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() =>
-              setOpenDropdown(openDropdown === "tag" ? null : "tag")
-            }
-            className={`h-8 px-3 rounded-full text-xs font-medium cursor-pointer transition-all duration-small active:scale-[0.97] border inline-flex items-center gap-1.5 ${
-              selectedTag
-                ? "bg-voice-soft/25 border-voice/40 text-foreground font-semibold shadow-xs"
-                : "bg-surface-raised hover:bg-surface text-muted-foreground border-border/40"
-            }`}
-          >
-            {selectedTag ? <Hash size={12} className="text-voice shrink-0" /> : null}
-            <span>{selectedTag ? `#${selectedTag}` : filters.tagTrigger}</span>
-            <ChevronDown
-              size={12}
-              className={`text-subtle transition-transform duration-200 ${
-                openDropdown === "tag" ? "rotate-180" : ""
-              }`}
-            />
-          </button>
-
-          {/* Menú de Temas */}
-          {openDropdown === "tag" && (
-            <div className="absolute left-0 top-full mt-1.5 w-40 p-1.5 rounded-xl bg-surface-raised border border-border/40 shadow-raised z-40 animate-section-enter space-y-0.5">
-              <button
-                type="button"
-                onClick={() => {
-                  onSelectTag(null);
-                  setOpenDropdown(null);
-                }}
-                className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:bg-surface hover:text-foreground transition-colors"
-              >
-                {filters.allTags}
-              </button>
-              {tags.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => {
-                    onSelectTag(t);
-                    setOpenDropdown(null);
-                  }}
-                  className={`w-full flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
-                    selectedTag === t
-                      ? "bg-voice-soft/30 text-foreground font-semibold"
-                      : "text-muted-foreground hover:bg-surface hover:text-foreground"
-                  }`}
-                >
-                  <Hash size={11} className="text-muted-foreground" />
-                  <span>{t}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Botón Quitar filtros */}
-        {hasActiveFilters && (
-          <button
-            type="button"
-            onClick={clearAllFilters}
-            className="h-8 px-2.5 rounded-full text-xs text-muted-foreground hover:text-foreground hover:bg-surface inline-flex items-center gap-1 transition-colors cursor-pointer"
-          >
-            <X size={12} />
-            <span>{filters.clearAll}</span>
-          </button>
-        )}
-      </div>
+    <div className="space-y-2">
+      <p className="text-xs text-muted-foreground">{title}</p>
+      <div className="flex flex-wrap gap-2">{children}</div>
     </div>
   );
-};
+}
 
-export default FilterBar;
+/**
+ * Filtros de Notas en una fila (features/notes/components/filter-bar.tsx de la app): "Todas" o
+ * "Favoritas" (sin número), y "Filtrar", que despliega ánimo y tema. Con el panel cerrado, lo que está
+ * filtrando queda a la vista y se quita con un toque.
+ */
+export const FilterBar = React.forwardRef<
+  HTMLDivElement,
+  { filter: NoteFilter; onChange: (filter: NoteFilter) => void; moods: Mood[]; tags: string[] }
+>(({ filter, onChange, moods, tags }, ref) => {
+  const [open, setOpen] = useState(false);
+  const panelId = React.useId();
+  const active = (filter.mood ? 1 : 0) + (filter.tag ? 1 : 0);
+  const hasOptions = moods.length > 0 || tags.length > 0;
+
+  const optionClass = (selected: boolean) =>
+    `inline-flex h-9 items-center gap-2 rounded-full border px-3 text-[13px] transition-colors duration-small focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
+      selected ? "text-foreground" : "border-transparent bg-surface text-muted-foreground hover:text-foreground"
+    }`;
+
+  return (
+    <div className="space-y-3">
+      <div ref={ref} className="flex items-center gap-2">
+        <div role="radiogroup" aria-label="Qué notas ver" className="flex flex-1 gap-2">
+          <button
+            type="button"
+            role="radio"
+            aria-checked={!filter.favorites}
+            onClick={() => onChange({ ...filter, favorites: false })}
+            className={scopeClass(!filter.favorites)}
+          >
+            Todas
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={filter.favorites}
+            onClick={() => onChange({ ...filter, favorites: true })}
+            className={scopeClass(filter.favorites)}
+          >
+            <Heart
+              size={14}
+              aria-hidden="true"
+              className={filter.favorites ? "fill-voice-foreground text-voice-foreground" : "fill-emotion text-emotion"}
+            />
+            Favoritas
+          </button>
+        </div>
+
+        {hasOptions ? (
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            aria-expanded={open}
+            aria-controls={panelId}
+            aria-label={active ? `Filtros, ${active} activos` : "Filtrar por ánimo o tema"}
+            className={`inline-flex h-9 items-center gap-1.5 rounded-full border pl-3 pr-2.5 text-sm transition-colors duration-small focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
+              active
+                ? "border-voice/45 bg-voice/10 text-foreground"
+                : open
+                  ? "border-border/70 bg-surface text-muted-foreground"
+                  : "border-border/70 text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <SlidersHorizontal size={15} aria-hidden="true" className={active ? "text-voice" : undefined} />
+            {active ? `Filtros · ${active}` : "Filtrar"}
+            <ChevronDown
+              size={14}
+              aria-hidden="true"
+              className={`text-subtle transition-transform duration-small ${open ? "rotate-180" : ""}`}
+            />
+          </button>
+        ) : null}
+      </div>
+
+      {open ? (
+        <div id={panelId} className="panel-in space-y-3">
+          {moods.length ? (
+            <OptionRow title="Ánimo">
+              {moods.map((m) => {
+                const selected = filter.mood === m;
+                return (
+                  <button
+                    key={m}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => onChange({ ...filter, mood: selected ? null : m })}
+                    className={optionClass(selected)}
+                    style={
+                      selected
+                        ? {
+                            backgroundColor: `color-mix(in srgb, ${moodColor(m)} 14%, transparent)`,
+                            borderColor: `color-mix(in srgb, ${moodColor(m)} 50%, transparent)`,
+                          }
+                        : undefined
+                    }
+                  >
+                    <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ backgroundColor: moodColor(m) }} />
+                    {MOOD_LABELS[m]}
+                  </button>
+                );
+              })}
+            </OptionRow>
+          ) : null}
+          {tags.length ? (
+            <OptionRow title="Tema">
+              {tags.map((t) => {
+                const selected = filter.tag === t;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => onChange({ ...filter, tag: selected ? null : t })}
+                    className={`${optionClass(selected)} ${selected ? "border-voice/50 bg-voice/15" : ""}`}
+                  >
+                    #{t}
+                  </button>
+                );
+              })}
+            </OptionRow>
+          ) : null}
+        </div>
+      ) : active ? (
+        <div className="panel-in flex flex-wrap gap-2">
+          {filter.mood ? (
+            <button
+              type="button"
+              onClick={() => onChange({ ...filter, mood: null })}
+              aria-label={`Quitar filtro ${MOOD_LABELS[filter.mood]}`}
+              className="inline-flex h-9 items-center gap-1.5 rounded-full pl-3 pr-2 text-[13px] font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice"
+              style={{ backgroundColor: `color-mix(in srgb, ${moodColor(filter.mood)} 14%, transparent)` }}
+            >
+              {MOOD_LABELS[filter.mood]}
+              <X size={14} className="text-muted-foreground" aria-hidden="true" />
+            </button>
+          ) : null}
+          {filter.tag ? (
+            <button
+              type="button"
+              onClick={() => onChange({ ...filter, tag: null })}
+              aria-label={`Quitar filtro #${filter.tag}`}
+              className="inline-flex h-9 items-center gap-1.5 rounded-full bg-voice/15 pl-3 pr-2 text-[13px] font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice"
+            >
+              #{filter.tag}
+              <X size={14} className="text-muted-foreground" aria-hidden="true" />
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+});
+FilterBar.displayName = "FilterBar";

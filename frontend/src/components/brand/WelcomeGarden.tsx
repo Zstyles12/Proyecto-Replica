@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useId } from "react";
 
 /**
- * Ilustración Botánica de Bienvenida de Replica (1:1 con zairo-main/welcome-garden.tsx y docs/DESIGN.md).
+ * Ilustración Botánica de Bienvenida de Replica (1:1 con replica mobile/zairo/welcome-garden.tsx y docs/DESIGN.md).
  *
  * Una sola planta que germina y florece a su propio ritmo:
  * - Etapa 0 (Semilla): Renglón de cuaderno trazado y una semilla apoyada sobre él con su brillo.

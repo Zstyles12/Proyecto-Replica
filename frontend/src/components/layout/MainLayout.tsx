@@ -1,39 +1,44 @@
-import React from "react";
-import { useLocation } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Outlet, useLocation } from "react-router-dom";
 import { SidebarNav } from "./SidebarNav";
 import { BottomNav } from "./BottomNav";
-
-interface MainLayoutProps {
-  children: React.ReactNode;
-}
+import { useImmersive } from "../../lib/layout";
+import { ShareDialog } from "../../features/cofre/components/ShareDialog";
 
 /**
- * Layout principal responsivo según DESIGN.md:
- * - Columna de lectura central de 680 px (rango 640–720 px, Sección 5).
- * - Barra lateral de 240 px fija en desktop (Sección 6).
- * - Barra flotante inferior de 62 px a 16 px de bordes en mobile (Sección 6).
- * - Transición de cambio de ruta: fundido cruzado de 220 ms subiendo 8 px (Sección 7.2).
+ * Layout de la app (DESIGN-WEB.md §2):
+ * - Menos de 768 px: barra inferior flotante, como la app.
+ * - Desde 768 px: barra lateral fija de 240 px.
+ * - El contenido en su columna; cada pantalla decide si suma un panel a la derecha desde 1024 px.
+ * - Cambio de sección: fundido de 220 ms subiendo 8 px (DESIGN.md §7.2).
  */
-export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
+export const MainLayout: React.FC = () => {
   const location = useLocation();
+  const immersive = useImmersive();
+
+  // Al cambiar de pantalla se empieza desde arriba.
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [location.pathname]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground bg-warp-lines relative">
-      {/* Barra de navegación de escritorio */}
+    <div className="relative min-h-screen bg-background bg-warp-lines text-foreground">
       <SidebarNav />
 
-      {/* Contenedor de contenido responsivo (hasta 1024px para cuadrícula de 2 columnas en desktop, Sección 5) */}
-      <main className="md:pl-60 min-h-screen">
-        <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-28 md:pb-12">
-          {/* Animación por cambio de sección (Sección 7.2) */}
+      <main className="min-h-screen md:pl-60">
+        <div
+          className={`mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 ${
+            immersive ? "pb-0 pt-0 md:pb-12 md:pt-8" : "pb-28 pt-8 md:pb-12"
+          }`}
+        >
           <div key={location.pathname} className="animate-section-enter">
-            {children}
+            <Outlet />
           </div>
         </div>
       </main>
 
-      {/* Barra de navegación móvil */}
-      <BottomNav />
+      {immersive ? null : <BottomNav />}
+      <ShareDialog />
     </div>
   );
 };

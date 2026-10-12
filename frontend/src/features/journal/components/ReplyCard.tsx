@@ -1,144 +1,163 @@
-import React, { useState, useEffect } from "react";
-import { ChevronDown, ChevronUp, PenLine } from "lucide-react";
-import { Card } from "../../../components/ui/Card";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ChevronDown, ChevronRight, PenLine, Sprout } from "lucide-react";
+import { AiAura, Enter, WordReveal } from "../../../components/motion/Motion";
 import { Button } from "../../../components/ui/Button";
-import type { AIReply } from "../../../services/journal";
-import { INICIO_CONTENT } from "../../../data/inicioContent";
-import { playSound } from "../../../lib/sounds";
+import { journal } from "../store";
+import type { Note } from "../types";
+import { setPendingPrompt } from "../../../lib/appState";
+
+// El análisis cita a la persona entre comillas: esas son sus palabras, así que van en su color (salvia)
+// y en itálica, como una cita en un libro.
+function QuotedBody({ text }: { text: string }) {
+  const parts = text.split(/(“[^”]+”)/g).filter(Boolean);
+  return (
+    <p className="text-[17px] leading-[27px] text-foreground">
+      {parts.map((part, i) =>
+        part.startsWith("“") ? (
+          <span key={i} className="font-replica text-[18px] italic text-voice">
+            {part}
+          </span>
+        ) : (
+          <React.Fragment key={i}>{part}</React.Fragment>
+        )
+      )}
+    </p>
+  );
+}
+
+// Preguntas para seguir escribiendo: opcionales y plegadas, para que la réplica no se sienta como una
+// tarea. Cada una lleva a escribir sobre ella en Inicio.
+function FollowUps({ questions, live }: { questions: string[]; live: boolean }) {
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const panelId = React.useId();
+
+  return (
+    <Enter disabled={!live} delay={live ? 160 : 0}>
+      <div className="overflow-hidden rounded-md bg-surface">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-controls={panelId}
+          className="flex w-full items-center gap-2.5 px-4 py-3.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-voice"
+        >
+          <PenLine size={16} className="text-voice" aria-hidden="true" />
+          <span className="flex-1 text-[15px] font-medium text-foreground">Para seguir escribiendo</span>
+          <span className="text-[13px] text-muted-foreground">{questions.length}</span>
+          <ChevronDown
+            size={17}
+            aria-hidden="true"
+            className={`text-muted-foreground transition-transform duration-small ease-out motion-reduce:transition-none ${open ? "rotate-180" : ""}`}
+          />
+        </button>
+        {open ? (
+          <ul id={panelId} className="enter">
+            {questions.map((q) => (
+              <li key={q} className="border-t border-border/60">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPendingPrompt(q);
+                    navigate("/");
+                  }}
+                  aria-label={`Escribir sobre esto: ${q}`}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-voice"
+                >
+                  <span className="flex-1 font-replica text-base italic leading-[22px] text-foreground">{q}</span>
+                  <ChevronRight size={16} className="text-subtle" aria-hidden="true" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+    </Enter>
+  );
+}
 
 interface ReplyCardProps {
-  reply: AIReply;
-  onWriteAboutThis?: (question: string) => void;
+  // La réplica de una nota o la del día: las dos tienen la misma forma.
+  note: Pick<Note, "id" | "reply" | "replyDraft" | "replyStatus">;
+  // true: la réplica está llegando en vivo (o acaba de llegar) y sus partes hacen su entrada.
+  live: boolean;
+  // La réplica del día (o la última, a medianoche): otro subtítulo y otra forma de reintentar.
+  kind?: "note" | "day" | "late";
+  onRetry?: () => void;
 }
 
 /**
- * Tarjeta de la Réplica según Sección 6 y 7.3 de DESIGN.md:
- * - Avatar con brote 🌱 y aura malva respiratoria (ciclo 5.2s).
- * - Titular grande en Alegreya llamando por el nombre.
- * - Análisis en texto con tu cita en itálica salvia.
- * - Rayita voice-soft.
- * - Desplegable "Para seguir escribiendo".
- * - Streaming de palabras progresivo (45 ms por palabra, Sección 7.1).
+ * La réplica: quién habla, una frase que resume, el análisis que cita tu nota y preguntas para seguir
+ * (features/journal/components/reply-card.tsx de la app).
  */
-export const ReplyCard: React.FC<ReplyCardProps> = ({
-  reply,
-  onWriteAboutThis,
-}) => {
-  const [isOpenQuestions, setIsOpenQuestions] = useState(true);
-  const words = reply.content.split(" ");
-  const [visibleCount, setVisibleCount] = useState(0);
+export const ReplyCard: React.FC<ReplyCardProps> = ({ note, live, kind = "note", onRetry }) => {
+  const streaming = note.replyStatus === "streaming";
+  const headline = note.reply?.headline ?? note.replyDraft?.headline ?? "";
+  const body = note.reply?.body ?? note.replyDraft?.body ?? "";
 
-  const { reply: replyContent } = INICIO_CONTENT;
+  if (note.replyStatus === "none" || note.replyStatus === "error") {
+    return (
+      <div className="space-y-3 rounded-lg border border-border/40 bg-surface-raised p-5 shadow-raised dark:shadow-none">
+        <p className="text-[15px] leading-[21px] text-muted-foreground">
+          {note.replyStatus === "error" ? "No pudimos traer la réplica. Tu nota está guardada." : "Esta nota todavía no tiene réplica."}
+        </p>
+        <Button size="sm" onClick={onRetry ?? (() => journal.requestReply(note.id))}>
+          {note.replyStatus === "error" ? "Intentar de nuevo" : "Pedir réplica"}
+        </Button>
+      </div>
+    );
+  }
 
-  // Streaming progresivo a 45 ms por palabra (Sección 7.1 de DESIGN.md)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setVisibleCount((prev) => {
-        if (prev < words.length) {
-          const next = prev + 1;
-          if (next === words.length) {
-            playSound("replica");
-          }
-          return next;
-        }
-        clearInterval(interval);
-        return prev;
-      });
-    }, 45);
-
-    return () => clearInterval(interval);
-  }, [words.length]);
-
-  const isStreaming = visibleCount < words.length;
-  const displayedText = words.slice(0, visibleCount).join(" ");
+  const status =
+    kind === "late"
+      ? streaming
+        ? "Leyendo lo que escribiste de noche…"
+        : "Tu última réplica"
+      : kind === "day"
+        ? streaming
+          ? "Leyendo todo tu día…"
+          : "Tu réplica del día"
+        : streaming
+          ? "Leyendo tu nota…"
+          : "Tu compañera silenciosa";
 
   return (
-    <Card variant="raised" className="space-y-5 animate-section-enter border-reply/30">
-      {/* Cabecera con Brote y Aura Malva (ciclo 5.2 s) */}
+    <article className="space-y-4 rounded-lg border border-border/40 bg-surface-raised p-5 shadow-raised dark:shadow-none">
       <div className="flex items-center gap-3">
-        <div className="relative">
-          <div className="w-10 h-10 rounded-full bg-voice-soft text-voice flex items-center justify-center text-lg animate-malva-aura">
-            🌱
-          </div>
-        </div>
-        <div>
-          <span className="font-sans text-xs font-semibold text-reply tracking-wide block uppercase">
-            {replyContent.tagline}
+        <AiAura size={48} active={streaming}>
+          <span aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-full bg-voice text-voice-foreground">
+            <Sprout size={19} />
           </span>
-          <span className="text-[11px] text-subtle">
-            {isStreaming ? "Tejiendo réplica…" : "Completada"}
-          </span>
+        </AiAura>
+        <div className="flex-1">
+          <p className="font-replica text-lg font-medium leading-[22px] text-voice">Replica</p>
+          <p className="text-xs text-muted-foreground" aria-live="polite">
+            {status}
+          </p>
         </div>
       </div>
 
-      {/* Titular Grande en Alegreya */}
-      <h3 className="font-replica text-2xl md:text-3xl font-normal text-foreground leading-snug tracking-tight">
-        {reply.title}
-      </h3>
+      {headline ? (
+        <WordReveal
+          as="h2"
+          text={headline}
+          mode={live ? "stagger" : "none"}
+          className="font-replica text-[29px] font-normal leading-[36px] tracking-[-0.3px] text-foreground"
+        />
+      ) : null}
 
-      {/* Cuerpo en Alegreya Italic Malva con tu cita en Itálica Salvia */}
-      <div className="space-y-3 font-replica text-lg text-reply leading-relaxed italic">
-        <p>
-          {displayedText}
-          {isStreaming && (
-            <span className="inline-block w-1.5 h-4 ml-1 bg-reply/60 animate-pulse align-middle" />
-          )}
-        </p>
+      {body ? (
+        streaming ? (
+          <WordReveal text={body} mode="stream" className="text-[17px] leading-[27px] text-foreground" />
+        ) : (
+          <QuotedBody text={body} />
+        )
+      ) : null}
 
-        {/* Cita textual del usuario en itálica salvia (Sección 4 de DESIGN.md) */}
-        {reply.quote && !isStreaming && (
-          <div className="pl-4 border-l-2 border-voice/50 my-2">
-            <p className="text-voice font-replica italic text-base">
-              "{reply.quote}"
-            </p>
-          </div>
-        )}
-      </div>
+      {headline ? <span aria-hidden="true" className="block h-1 w-12 rounded-full bg-voice-soft" /> : null}
 
-      {/* Rayita divisoria voice-soft (Sección 6) */}
-      <div className="border-b border-voice-soft/60 pt-1" />
-
-      {/* Desplegable "Para seguir escribiendo" */}
-      {reply.questions && reply.questions.length > 0 && !isStreaming && (
-        <div className="space-y-3 pt-1">
-          <button
-            type="button"
-            onClick={() => setIsOpenQuestions(!isOpenQuestions)}
-            className="flex items-center justify-between w-full text-xs font-semibold text-foreground select-none cursor-pointer py-1"
-          >
-            <span className="uppercase tracking-wider">
-              {replyContent.followUpTitle}
-            </span>
-            {isOpenQuestions ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </button>
-
-          {isOpenQuestions && (
-            <div className="space-y-3 animate-section-enter pt-1">
-              {reply.questions.map((q, idx) => (
-                <div
-                  key={idx}
-                  className="p-3.5 rounded-md bg-surface border border-border/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5"
-                >
-                  <p className="font-voice text-sm text-foreground flex-1">
-                    {q}
-                  </p>
-                  {onWriteAboutThis && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      icon={<PenLine size={13} />}
-                      onClick={() => onWriteAboutThis(q)}
-                      className="shrink-0 text-voice text-xs"
-                    >
-                      {replyContent.writeAboutThis}
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-    </Card>
+      {note.reply?.questions.length ? <FollowUps questions={note.reply.questions} live={live} /> : null}
+    </article>
   );
 };

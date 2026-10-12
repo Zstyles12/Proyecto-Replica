@@ -81,7 +81,7 @@ function Half({
 
 /**
  * AnimatedHeart:
- * - 1:1 con zairo-main/components/motion/heart.tsx
+ * - 1:1 con replica mobile/zairo/components/motion/heart.tsx
  * - Al activar (favorito): Late (scale 1.3 con rebote) y suelta 6 puntos radiales (burst).
  * - Al desactivar (quitar favorito): El corazón se rompe en dos mitades (Half) que se separan,
  *   caen y se desvanecen, mientras el contorno vacío emerge suavemente.

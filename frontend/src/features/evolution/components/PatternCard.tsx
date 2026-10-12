@@ -1,14 +1,14 @@
 import React from "react";
 import { Sparkles, MoonStar } from "lucide-react";
-import type { Pattern } from "../../../services/metrics";
-import { PLAYGROUND_CONTENT } from "../../../data/playgroundContent";
+import type { Pattern } from "../../profile/metrics";
+import { MOOD_ITEMS } from "../../journal/moods";
 
 interface PatternCardProps {
   pattern: Pattern;
 }
 
 export const PatternCard: React.FC<PatternCardProps> = ({ pattern }) => {
-  const moods = PLAYGROUND_CONTENT.moods;
+  const moods = MOOD_ITEMS;
   const moodObj = pattern.mood ? moods.find((m) => m.id === pattern.mood) : null;
   const color = moodObj?.colorVar || "var(--voice)";
 

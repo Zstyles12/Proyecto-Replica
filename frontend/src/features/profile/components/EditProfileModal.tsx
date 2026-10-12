@@ -1,119 +1,160 @@
-import React, { useState } from "react";
-import { X, UserRound, Sparkles } from "lucide-react";
-import { USUARIO_CONTENT } from "../../../data/usuarioContent";
-
-interface EditProfileModalProps {
-  isOpen: boolean;
-  initialName: string;
-  initialIntention: string;
-  onClose: () => void;
-  onSave: (data: { name: string; intention: string }) => void;
-}
+import React, { useRef, useState } from "react";
+import { Trash2 } from "lucide-react";
+import { Dialog } from "../../../components/ui/Dialog";
+import { Button } from "../../../components/ui/Button";
+import { Avatar } from "../../care/components/CareParts";
+import { updateProfile, useProfile } from "../store";
 
 const INTENTION_MAX = 60;
+// La foto se recorta en cuadrado y se guarda pequeña: es solo para el perfil.
+const PHOTO_SIZE = 320;
 
-export const EditProfileModal: React.FC<EditProfileModalProps> = ({
-  isOpen,
-  initialName,
-  initialIntention,
-  onClose,
-  onSave,
-}) => {
-  const [name, setName] = useState(initialName);
-  const [intention, setIntention] = useState(initialIntention);
-  const { editModal: copy } = USUARIO_CONTENT;
+// Recorta al centro en cuadrado y la reduce, como la app (features/profile/photo.ts).
+function cropSquare(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const side = Math.min(img.width, img.height);
+      const canvas = document.createElement("canvas");
+      canvas.width = PHOTO_SIZE;
+      canvas.height = PHOTO_SIZE;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return reject(new Error("sin canvas"));
+      ctx.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, PHOTO_SIZE, PHOTO_SIZE);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL("image/jpeg", 0.85));
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("imagen no válida"));
+    };
+    img.src = url;
+  });
+}
 
-  if (!isOpen) return null;
+/** Editar el perfil (app/editar-perfil.tsx): foto, nombre y una frase propia. */
+export const EditProfileModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
+  const profile = useProfile();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [name, setName] = useState(profile.name);
+  const [intention, setIntention] = useState(profile.intention);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [wasOpen, setWasOpen] = useState(isOpen);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Cada vez que se abre, parte de lo que está guardado.
+  if (isOpen && !wasOpen) {
+    setName(profile.name);
+    setIntention(profile.intention);
+    setNotice(null);
+  }
+  if (isOpen !== wasOpen) setWasOpen(isOpen);
+
+  const clean = name.trim();
+
+  const choose = async (file: File | undefined) => {
+    setNotice(null);
+    if (!file) return;
+    try {
+      updateProfile({ photo: await cropSquare(file) });
+    } catch {
+      setNotice("No pudimos usar esa foto. Prueba con otra.");
+    }
+  };
+
+  const save = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({
-      name: name.trim(),
-      intention: intention.trim().replace(/^[“"]|[”"]$/g, ""),
-    });
+    if (!clean) return;
+    updateProfile({ name: clean, intention: intention.trim().replace(/^[“"]|[”"]$/g, "") });
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-section-enter">
-      <div className="w-full max-w-md rounded-3xl bg-surface-raised border border-border/50 p-6 md:p-7 space-y-5 shadow-raised relative select-none">
-        {/* Cabecera */}
-        <div className="flex items-center justify-between pb-2 border-b border-border/20">
-          <div>
-            <h3 className="font-replica text-xl font-normal text-foreground">
-              {copy.title}
-            </h3>
-            <p className="text-xs text-muted-foreground font-voice mt-0.5">
-              {copy.description}
-            </p>
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      title="Tu perfil"
+      description="Solo tú lo ves. Tu nombre se usa para saludarte."
+      size="sm"
+      footer={
+        <Button type="submit" form="edit-profile-form" size="lg" className="w-full" disabled={!clean}>
+          Guardar
+        </Button>
+      }
+    >
+      <form id="edit-profile-form" onSubmit={save} className="space-y-5">
+        <div className="flex items-center gap-4">
+          <Avatar name={clean || "?"} size={64} photo={profile.photo} />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" variant="secondary" size="sm" onClick={() => fileRef.current?.click()}>
+              {profile.photo ? "Cambiar foto" : "Elegir foto"}
+            </Button>
+            {profile.photo ? (
+              <button
+                type="button"
+                onClick={() => updateProfile({ photo: null })}
+                aria-label="Quitar la foto"
+                className="flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice"
+              >
+                <Trash2 size={17} aria-hidden="true" />
+              </button>
+            ) : null}
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              tabIndex={-1}
+              aria-hidden="true"
+              onChange={(e) => {
+                choose(e.target.files?.[0]);
+                e.target.value = "";
+              }}
+            />
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar modal"
-            className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-surface transition-colors cursor-pointer"
-          >
-            <X size={18} />
-          </button>
+        </div>
+        {notice ? (
+          <p role="alert" className="text-xs text-emotion">
+            {notice}
+          </p>
+        ) : null}
+
+        <div className="space-y-1.5">
+          <label htmlFor="edit-profile-name" className="block px-1 text-[13px] text-muted-foreground">
+            Tu nombre
+          </label>
+          <input
+            id="edit-profile-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            maxLength={40}
+            placeholder="Tu nombre"
+            autoComplete="given-name"
+            data-autofocus
+            className="h-12 w-full rounded-md border border-border bg-surface px-4 text-base text-foreground placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-voice/40"
+          />
         </div>
 
-        {/* Formulario */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Campo de Nombre */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-voice flex items-center gap-1.5">
-              <UserRound size={13} />
-              <span>{copy.nameLabel}</span>
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between px-1">
+            <label htmlFor="edit-profile-intention" className="text-[13px] text-muted-foreground">
+              Una frase que te acompañe · opcional
             </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={copy.namePlaceholder}
-              className="w-full h-10 px-3.5 rounded-xl bg-surface border border-border/40 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-voice/50 focus:border-voice"
-            />
+            <span className="text-xs text-muted-foreground" aria-hidden="true">
+              {intention.length}/{INTENTION_MAX}
+            </span>
           </div>
-
-          {/* Campo de Frase de Intención */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-voice flex items-center gap-1.5">
-                <Sparkles size={13} />
-                <span>{copy.intentionLabel}</span>
-              </label>
-              <span className="text-[11px] font-mono text-subtle">
-                {intention.length}/{INTENTION_MAX}
-              </span>
-            </div>
-            <textarea
-              value={intention}
-              maxLength={INTENTION_MAX}
-              onChange={(e) => setIntention(e.target.value)}
-              placeholder={copy.intentionPlaceholder}
-              rows={2}
-              className="w-full p-3 rounded-xl bg-surface border border-border/40 text-sm font-replica italic text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-voice/50 focus:border-voice resize-none leading-relaxed"
-            />
-          </div>
-
-          {/* Botones de acción */}
-          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-border/20">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-full bg-surface hover:bg-surface-sunken text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-            >
-              {copy.cancelButton}
-            </button>
-            <button
-              type="submit"
-              className="px-5 py-2 rounded-full bg-voice hover:bg-voice-hover text-voice-foreground text-xs font-semibold shadow-xs transition-all active:scale-[0.97] cursor-pointer"
-            >
-              {copy.saveButton}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+          <input
+            id="edit-profile-intention"
+            value={intention}
+            onChange={(e) => setIntention(e.target.value)}
+            maxLength={INTENTION_MAX}
+            placeholder="Por ejemplo: aprender a poner límites"
+            className="h-12 w-full rounded-md border border-border bg-surface px-4 font-replica text-base italic text-foreground placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-voice/40"
+          />
+        </div>
+      </form>
+    </Dialog>
   );
 };
 

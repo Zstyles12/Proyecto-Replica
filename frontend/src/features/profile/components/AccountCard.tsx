@@ -1,82 +1,54 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Download, LogOut, Check, Shield } from "lucide-react";
-import type { Profile } from "../../../services/profile";
-import { profileService } from "../../../services/profile";
-import { journalService } from "../../../services/journal";
-import { authService } from "../../../services/auth";
-import { playSound } from "../../../lib/sounds";
-import { USUARIO_CONTENT } from "../../../data/usuarioContent";
+import { LogOut, Mail, Trash2 } from "lucide-react";
+import { ConfirmDialog } from "../../../components/ui/Dialog";
+import { LinkRow } from "./SettingsCard";
+import { sessionActions, useAccount } from "../../../lib/session";
+import type { AuthProvider } from "../../../services/auth";
 
-interface AccountCardProps {
-  profile: Profile;
-}
+const PROVIDER: Record<AuthProvider, string> = {
+  apple: "Entraste con Apple",
+  google: "Entraste con Google",
+  email: "Entraste con tu correo",
+};
 
-export const AccountCard: React.FC<AccountCardProps> = ({ profile }) => {
-  const navigate = useNavigate();
-  const [exported, setExported] = useState(false);
-  const { account: copy } = USUARIO_CONTENT.settings;
-
-  const handleExport = () => {
-    const entries = journalService.getEntries();
-    profileService.exportUserDataJSON(entries);
-    playSound("guardado");
-    setExported(true);
-    setTimeout(() => setExported(false), 3000);
-  };
-
-  const handleLogout = () => {
-    if (window.confirm(copy.logoutConfirm)) {
-      authService.clearSession();
-      navigate("/auth", { replace: true });
-    }
-  };
+// Tu cuenta (features/profile/components/account-card.tsx de la app): con qué entraste, cerrar sesión y
+// eliminar la cuenta, que borra todo.
+export const AccountCard: React.FC = () => {
+  const account = useAccount();
+  const [confirm, setConfirm] = useState<"logout" | "delete" | null>(null);
+  if (!account) return null;
 
   return (
-    <div className="p-5 rounded-2xl bg-surface-raised border border-border/40 shadow-xs space-y-4 select-none">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-surface-sunken text-muted-foreground flex items-center justify-center shrink-0 shadow-xs">
-          <Shield size={18} />
-        </div>
-
+    <div className="space-y-0.5 rounded-lg border border-border/40 bg-surface-raised p-2 shadow-raised dark:shadow-none">
+      <div className="flex items-center gap-3 px-3 py-3">
+        <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-voice-soft text-voice">
+          <Mail size={17} />
+        </span>
         <div className="min-w-0 flex-1">
-          <h3 className="font-replica text-lg font-medium text-foreground truncate">
-            {copy.title}
-          </h3>
-          <p className="text-xs text-muted-foreground font-voice truncate">
-            {profile.email}
-          </p>
+          <p className="truncate text-[15px] font-semibold leading-5 text-foreground">{account.email}</p>
+          <p className="text-[13px] text-muted-foreground">{PROVIDER[account.provider]}</p>
         </div>
       </div>
+      <LinkRow icon={LogOut} title="Cerrar sesión" onClick={() => setConfirm("logout")} />
+      <LinkRow icon={Trash2} tint="emotion" title="Eliminar mi cuenta" onClick={() => setConfirm("delete")} />
 
-      <div className="space-y-2 pt-1 border-t border-border/20">
-        {/* Botón de Exportar Diario en JSON */}
-        <button
-          type="button"
-          onClick={handleExport}
-          className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-surface hover:bg-surface-sunken border border-border/30 text-xs font-medium text-foreground transition-all cursor-pointer shadow-xs active:scale-[0.98]"
-        >
-          <div className="flex items-center gap-2.5">
-            {exported ? (
-              <Check size={15} className="text-voice" />
-            ) : (
-              <Download size={15} className="text-voice" />
-            )}
-            <span>{exported ? copy.exportSuccess : copy.exportButton}</span>
-          </div>
-          <span className="text-[11px] font-mono text-muted-foreground">JSON</span>
-        </button>
-
-        {/* Botón de Cerrar Sesión */}
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium text-destructive hover:bg-destructive/10 border border-transparent hover:border-destructive/20 transition-all cursor-pointer"
-        >
-          <LogOut size={14} />
-          <span>{copy.logoutButton}</span>
-        </button>
-      </div>
+      <ConfirmDialog
+        open={confirm === "logout"}
+        onClose={() => setConfirm(null)}
+        onConfirm={() => sessionActions.signOut()}
+        title="¿Cerrar sesión?"
+        description="Tu diario queda guardado en tu cuenta para cuando vuelvas."
+        confirmLabel="Cerrar sesión"
+      />
+      <ConfirmDialog
+        open={confirm === "delete"}
+        onClose={() => setConfirm(null)}
+        onConfirm={() => sessionActions.deleteAccount()}
+        title="¿Eliminar tu cuenta?"
+        description="Se borran tu diario, tus réplicas, tus frases guardadas y tus conversaciones. No se puede deshacer."
+        confirmLabel="Eliminar"
+        destructive
+      />
     </div>
   );
 };

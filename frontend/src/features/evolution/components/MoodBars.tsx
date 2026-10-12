@@ -1,6 +1,6 @@
 import React from "react";
-import type { MoodCount } from "../../../services/metrics";
-import { PLAYGROUND_CONTENT } from "../../../data/playgroundContent";
+import type { MoodCount } from "../../profile/metrics";
+import { MOOD_ITEMS } from "../../journal/moods";
 import { EVOLUCION_CONTENT } from "../../../data/evolucionContent";
 
 interface MoodBarsProps {
@@ -9,7 +9,7 @@ interface MoodBarsProps {
 }
 
 export const MoodBars: React.FC<MoodBarsProps> = ({ counts, periodDays }) => {
-  const moods = PLAYGROUND_CONTENT.moods;
+  const moods = MOOD_ITEMS;
   const { moodBars: copy } = EVOLUCION_CONTENT;
 
   if (counts.length === 0) return null;
