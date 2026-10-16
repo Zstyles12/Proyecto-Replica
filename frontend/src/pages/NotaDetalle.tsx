@@ -14,7 +14,7 @@ export const NotaDetalle: React.FC = () => {
   const note = useNote(id);
 
   return (
-    <div className="mx-auto max-w-[680px] space-y-4">
+    <div className="mx-auto max-w-[680px] space-y-4 lg:mx-0">
       <PageHeader
         title={note ? dayLabel(note.createdAt) : "Nota"}
         fallback="/notas"

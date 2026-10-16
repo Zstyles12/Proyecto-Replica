@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { SidebarNav } from "./SidebarNav";
+import { SpiralBinding } from "./SpiralBinding";
 import { BottomNav } from "./BottomNav";
 import { useImmersive } from "../../lib/layout";
 import { ShareDialog } from "../../features/cofre/components/ShareDialog";
@@ -24,6 +25,7 @@ export const MainLayout: React.FC = () => {
   return (
     <div className="relative min-h-screen bg-background bg-warp-lines text-foreground">
       <SidebarNav />
+      <SpiralBinding />
 
       <main className="min-h-screen md:pl-60">
         <div

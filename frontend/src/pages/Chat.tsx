@@ -22,7 +22,7 @@ export const Chat: React.FC = () => {
 
   if (!active || !psychologist) {
     return (
-      <div className="mx-auto max-w-[680px] space-y-8">
+      <div className="mx-auto max-w-[680px] space-y-8 lg:mx-0">
         <h1 className="font-replica text-[28px] font-normal leading-[34px] tracking-[-0.3px] text-foreground">Chat</h1>
         <div className="space-y-3 rounded-lg bg-surface-sunken px-8 py-12 text-center">
           <MessageCircle size={28} className="mx-auto text-voice" aria-hidden="true" />
@@ -148,7 +148,8 @@ function Conversation({ conversationId }: { conversationId: string }) {
         aria-label={`Conversación con ${psychologist.name}`}
         className="-mx-4 flex h-[100dvh] flex-col bg-background sm:-mx-6 md:mx-0 md:h-[calc(100dvh-5rem)] md:overflow-hidden md:rounded-lg md:border md:border-border/40 md:bg-surface-raised md:shadow-raised md:dark:shadow-none"
       >
-        <header className="flex items-center gap-1 border-b border-border/60 px-2 py-2 md:px-3">
+        <h2 className="sr-only">Conversación con {psychologist.name}</h2>
+        <header className="flex items-center gap-1 border-b border-border/60 px-2 py-2 md:px-3 lg:hidden">
           <button
             type="button"
             onClick={() => navigate("/")}

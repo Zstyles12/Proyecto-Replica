@@ -2,9 +2,13 @@
 <html lang="es" class="h-full">
   <head>
     <meta charset="UTF-8" />
+    <!-- La flor en la pestaña (DESIGN-WEB.md §9): el SVG sigue el tema del sistema; el .ico y el PNG,
+         para los navegadores y accesos directos que no leen SVG. Salen del kit con npm run marca. -->
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Replica</title>
+    <title>Replica · Tu diario</title>
     <script>
       // El tema guardado se aplica antes del primer dibujo para que no parpadee (hooks/useTheme.ts).
       try {
@@ -12,12 +16,17 @@
         if (theme === "light" || theme === "dark") document.documentElement.setAttribute("data-theme", theme);
       } catch (e) {}
     </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500&family=Alegreya:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+    <style>
+      /* Mientras carga la app: el ícono quieto, al centro. Aparece con un fundido corto solo si la
+         carga tarda, para no parpadear cuando es rápida. React lo reemplaza al dibujar. */
+      .carga { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+      .carga svg { opacity: 0; animation: carga-in 400ms cubic-bezier(0.23, 1, 0.32, 1) 300ms forwards; }
+      @keyframes carga-in { to { opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) { .carga svg { animation-name: none; opacity: 1; } }
+    </style>
   </head>
   <body class="min-h-full bg-background text-foreground font-sans antialiased relative overflow-x-hidden selection:bg-voice-soft selection:text-voice">
-    <div id="root"></div>
+    <div id="root"><!-- marca:carga --><div class="carga"><svg xmlns="http://www.w3.org/2000/svg" viewBox="10 8.5 101.5 105" width="70" height="72" aria-hidden="true"><rect x="22" y="10" width="88" height="102" rx="16" fill="var(--surface-raised)" stroke="var(--border)" stroke-width="2"/><g fill="var(--border)"><circle cx="32" cy="27" r="3.4"/><circle cx="32" cy="45" r="3.4"/><circle cx="32" cy="63" r="3.4"/><circle cx="32" cy="81" r="3.4"/><circle cx="32" cy="99" r="3.4"/></g><g fill="none" stroke="var(--subtle)" stroke-width="4.5" stroke-linecap="round"><path d="M13 32C11 23 22 18 32 27" /><path d="M13 50C11 41 22 36 32 45" /><path d="M13 68C11 59 22 54 32 63" /><path d="M13 86C11 77 22 72 32 81" /><path d="M13 104C11 95 22 90 32 99" /></g><path d="M84 10H96V34L90 28L84 34Z" fill="var(--voice)"/><g transform="translate(40 33) scale(0.48333)"><path d="M36.96 28.29A25 25 0 0 1 83.04 28.29A25 25 0 0 1 97.28 72.11A25 25 0 0 1 60 99.19A25 25 0 0 1 22.72 72.11A25 25 0 0 1 36.96 28.29Z" fill="var(--reply)"/><path d="M41.36 34.34A19 19 0 0 1 78.64 34.34A19 19 0 0 1 90.17 69.8A19 19 0 0 1 60 91.72A19 19 0 0 1 29.83 69.8A19 19 0 0 1 41.36 34.34Z" fill="var(--reply-soft)"/><circle cx="60" cy="60" r="9" fill="var(--reply)"/></g></svg></div><!-- /marca:carga --></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

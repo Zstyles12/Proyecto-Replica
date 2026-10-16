@@ -97,6 +97,7 @@ export const WriterSheet: React.FC<WriterSheetProps> = ({
         </label>
         <textarea
           id="writer-sheet"
+          data-testid="journal-writer-textarea"
           value={value}
           onChange={(e) => {
             setInterim("");
@@ -110,10 +111,10 @@ export const WriterSheet: React.FC<WriterSheetProps> = ({
           }}
           placeholder={placeholder}
           rows={5}
-          className="w-full resize-none bg-transparent font-voice text-lg leading-relaxed text-foreground placeholder:text-subtle focus:outline-none md:text-xl"
+          className="writer-ruled-lines w-full min-h-[120px] resize-none bg-transparent p-0 font-voice text-[17px] leading-[24px] text-foreground placeholder:text-subtle focus:outline-none"
         />
 
-        <div className="flex select-none flex-wrap items-center justify-between gap-3 border-t border-border/20 pt-4">
+        <div className="mt-3 flex select-none flex-wrap items-center justify-between gap-3 border-t border-border/20 pt-4">
           <div className="flex items-center gap-2">
             {dictation.supported && (
               <button
@@ -168,6 +169,7 @@ export const WriterSheet: React.FC<WriterSheetProps> = ({
               onClick={handleSubmit}
               icon={action === "guardar" ? <Save size={16} /> : <Sparkles size={16} />}
               aria-label={action === "replica" ? "Replica: guarda tu nota y Replica te responde" : "Guardar tu nota en tu diario"}
+              title="Ctrl + Enter (o ⌘ + Enter)"
             >
               {action === "replica" ? writer.actions.replica : writer.actions.save}
             </Button>

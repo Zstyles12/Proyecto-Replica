@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { DocumentTitle } from "./components/layout/DocumentTitle";
 import { MainLayout } from "./components/layout/MainLayout";
 import { TourHost } from "./components/tour/TourHost";
 import { useStage } from "./lib/session";
@@ -42,6 +43,7 @@ export function App() {
 
   return (
     <BrowserRouter>
+      <DocumentTitle />
       <Suspense fallback={<div className="min-h-screen bg-background" />}>
       <Routes>
         <Route path="/legal/:doc" element={<Legal />} />

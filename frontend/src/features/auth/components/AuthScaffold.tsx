@@ -1,7 +1,7 @@
 import React from "react";
 import { ChevronLeft, LoaderCircle } from "lucide-react";
 import { Button } from "../../../components/ui/Button";
-import { LogoMark } from "../../../components/brand/LogoMark";
+import { ReplicaMark } from "../../../components/brand/Logo";
 
 type Action = {
   label: string;
@@ -67,7 +67,7 @@ export const AuthScaffold: React.FC<AuthScaffoldProps> = ({
               </button>
             ) : (
               <span className="flex h-11 items-center pl-3" aria-hidden="true">
-                <LogoMark size={36} />
+                <ReplicaMark size={36} />
               </span>
             )}
           </div>

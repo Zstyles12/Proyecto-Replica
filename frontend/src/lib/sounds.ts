@@ -14,7 +14,8 @@ export type SoundName =
   | "notificacion_psicologo"
   | "notificacion_recordatorio"
   | "brote"
-  | "flor";
+  | "flor"
+  | "firma";
 
 export interface SoundMeta {
   id: SoundName;
@@ -102,6 +103,13 @@ export const SOUND_DEFINITIONS: SoundMeta[] = [
     description: "Campanita y apertura luminosa al desplegarse la flor (bienvenida paso 1 -> 2).",
     volume: 0.55,
   },
+  {
+    id: "firma",
+    file: "firma.wav",
+    name: "Firma",
+    description: "La pluma en cada letra y las dos notas de la réplica al abrirse las flores (cierre del registro).",
+    volume: 0.55,
+  },
 ];
 
 export const SOUND_DURATIONS: Record<SoundName, number> = {
@@ -116,6 +124,7 @@ export const SOUND_DURATIONS: Record<SoundName, number> = {
   notificacion_recordatorio: 3500,
   brote: 1800,
   flor: 2000,
+  firma: 3900,
 };
 
 const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");

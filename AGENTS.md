@@ -4,12 +4,18 @@ Instrucciones para cualquier agente que trabaje en este repositorio. Léelas ant
 
 ## Qué es
 
-Replica es un diario personal donde la IA responde con una **réplica**, más un canal con psicólogos verificados. Hay una **app móvil** (terminada en diseño y funcionamiento) y esta **web**, que es una adaptación de la app pensada para que también sea agradable en escritorio. Es un solo producto: la web no inventa funciones, textos ni reglas propias.
+Replica es un diario personal donde la IA responde con una **réplica**, más un canal con psicólogos verificados. Hay una **app móvil** (terminada en diseño y funcionamiento) y esta **web**. Es un solo producto, pero la web tiene sus propias interfaces, pensadas para que sea agradable en un navegador, tanto en el teléfono como en la computadora.
+
+**Qué se comparte y qué decide la web:**
+
+- **Se comparte con la app** (mandan sus documentos): las reglas de producto, la voz y el vocabulario, los colores, la tipografía, la marca (`docs/marca` de la app), los sonidos y el esquema de datos.
+- **Decide la web** (manda `docs/DESIGN-WEB.md`): cómo se organiza cada pantalla, la navegación, la composición de las piezas, las interacciones con ratón y teclado, el comportamiento en cada ancho y cómo se aplica la marca en el navegador.
+- **Primero se mira la app.** Si su solución sirve en el navegador, se adapta. Si la web necesita otro camino para verse o usarse mejor, se diseña uno propio, se anota en `DESIGN-WEB.md` y se aprueba antes de implementar. Lo mismo con los textos: se copian de la app cuando sirven, y se escriben nuevos (con la voz de Replica) cuando la interfaz web lo necesita.
 
 ## Fuentes de verdad, en este orden
 
 1. `docs/DESIGN.md`: sistema de diseño completo (colores, tipografía, movimiento, voz, piezas, pantallas y reglas de producto). **Copia exacta** del de la app: no se edita aquí; si la app lo cambia, se vuelve a copiar.
-2. `docs/DESIGN-WEB.md`: lo único que la web hace distinto a propósito (escritorio, navegador, decisiones propias de la web).
+2. `docs/DESIGN-WEB.md`: el diseño de las interfaces de la web (pantallas, navegación, anchos, marca en el navegador). Donde contradice a `DESIGN.md` en interfaz, manda este; en producto, voz, colores y marca, manda `DESIGN.md`.
 3. `docs/PRODUCT.md`: contexto de producto (copia exacta del de la app).
 4. `docs/02-estructura.md`: stack de la web, rutas, registro y estructura de carpetas.
 5. `docs/03-base-de-datos.md`: esquema compartido de Supabase. La web no define su propio esquema.
@@ -22,10 +28,11 @@ Si un pedido contradice estos documentos, dilo antes de implementar.
 
 - Vive en `../replica mobile/zairo` (repo `github.com/ManuelGoncalvesR/zairo`).
 - **Solo se lee para comparar. Nunca se modifica nada en ella, ni siquiera su `.git`.**
-- Ante una duda de comportamiento o de texto, manda la app. Dónde mirar:
+- Ante una duda de producto, de voz o de marca, manda la app. En interfaz, es el punto de partida, no una obligación. Dónde mirar:
   - Pantallas: `app/` (por ejemplo `app/(tabs)/index.tsx` es Inicio).
   - Lógica: `lib/session.ts` (etapas del registro), `features/journal/store.ts` y `features/journal/day-replies.ts` (notas y réplicas), `features/care/store.ts` (chat), `features/cofre/` (frases), `features/profile/` (perfil, métricas y ajustes), `lib/tutorials.ts` (recorridos).
   - Servicios simulados: `services/auth/`, `services/ai/`.
+  - Marca: `docs/marca` (manual, kit con logos, íconos, animaciones y sonidos) y `components/brand/logo-geometry.ts` (la geometría, generada por el kit). La web copia lo que usa con `npm run marca` (ver `frontend/scripts/marca.mjs`); nunca dibuja el logo a mano.
   - Es TypeScript; la lógica que no depende de React Native se puede traducir casi tal cual.
 
 ## Comandos
@@ -56,7 +63,7 @@ npm run build                            # tipos + build de producción
 
 - Español neutro, trato de tú, frases cortas, sin culpa ni presión. Nunca clínico ni gamificado.
 - Usa el vocabulario de `DESIGN.md` §9 (réplica, réplica del día, última réplica, notas de tu día, cofre, destilado por Replica, tela, hoja, nota privada).
-- **Copia los textos de la app** cuando la pantalla existe allá. No escribas textos nuevos si la app ya tiene uno para lo mismo.
+- **Copia los textos de la app** cuando sirven para la pantalla web. Escribe textos nuevos solo cuando la interfaz web es distinta y lo necesita, con la misma voz.
 - Los textos van donde los tiene la app: junto a la pantalla o la pieza que los usa (así se comparan línea por línea con la app). Los que comparten varias pantallas o son contenido largo van en `frontend/src/data/` (textos legales, bienvenida, navegación).
 - Nunca se muestra al usuario texto técnico (nombres de archivos, versiones, valores como "0.55", nombres de modelos).
 - Sin emojis en la interfaz: los íconos son de Lucide o los dibujos propios de la marca.
@@ -87,7 +94,7 @@ npm run build                            # tipos + build de producción
 1. `npx tsc -p tsconfig.app.json --noEmit`, `npm run lint` y `npm run build` sin errores.
 2. Revisión visual en anchos exactos: 375, 767, 768, 1023, 1024 y 1440, en claro y en oscuro.
 3. Recorrido con teclado de lo que cambió.
-4. Comparación con la misma pantalla de la app: mismos textos, mismo comportamiento.
+4. Comparación con la misma pantalla de la app: mismas reglas de producto y misma voz. Si la interfaz es distinta, que la diferencia esté anotada en `DESIGN-WEB.md`.
 
 ## Forma de trabajo
 

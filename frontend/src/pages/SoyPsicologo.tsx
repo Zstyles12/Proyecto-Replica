@@ -52,7 +52,7 @@ export const SoyPsicologo: React.FC = () => {
   const verified = application.status === "verified";
 
   return (
-    <div className="mx-auto max-w-[680px] space-y-6 pb-8">
+    <div className="mx-auto max-w-[680px] space-y-6 pb-8 lg:mx-0">
       <PageHeader title="" fallback="/usuario" />
       <Enter className="space-y-2">
         <h1 className="font-replica text-[28px] font-normal leading-[34px] tracking-[-0.3px] text-foreground">Atiende en Replica</h1>

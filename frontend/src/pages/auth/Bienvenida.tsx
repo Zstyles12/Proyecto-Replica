@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, ChevronRight, Volume2, VolumeX } from "lucide-react";
 import { Button } from "../../components/ui/Button";
-import { LogoMark } from "../../components/brand/LogoMark";
+import { LogoMotion } from "../../components/brand/LogoMotion";
 import { WelcomeGarden } from "../../components/brand/WelcomeGarden";
 import { WelcomeSun } from "../../components/brand/WelcomeSun";
 import { AUTH_CONTENT } from "../../data/authContent";
@@ -111,9 +111,9 @@ export const Bienvenida: React.FC = () => {
       <WelcomeSun growth={index} active isDesktop={isDesktop} className="pointer-events-none fixed left-0 top-0 z-0" />
 
       <header className="relative z-10 mx-auto flex w-full max-w-[700px] items-center justify-between px-5 pt-8 min-[1100px]:max-w-[1240px] min-[1100px]:px-12">
-        <div className="flex select-none items-center gap-2">
-          <LogoMark size={28} />
-          <span className="font-replica text-lg font-medium tracking-tight text-foreground">Replica</span>
+        {/* La firma con la ola, una sola vez al llegar (DESIGN-WEB.md §9). */}
+        <div className="flex select-none items-center">
+          <LogoMotion motion="ola" width={isDesktop ? 150 : 124} play delay={150} />
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
           <button

@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { NAVIGATION_CONTENT, type NavItem } from "../../data/navigationContent";
 import { useTheme } from "../../hooks/useTheme";
-import { LogoMark } from "../brand/LogoMark";
+import { ReplicaWordmark } from "../brand/Logo";
 
 const ICON_MAP = {
   Feather,
@@ -44,14 +44,8 @@ export const SidebarNav: React.FC = () => {
     >
       {/* Cabecera / Marca */}
       <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <LogoMark size={36} />
-          <div>
-            <span className="font-replica text-2xl font-normal tracking-tight text-foreground block leading-tight">
-              {NAVIGATION_CONTENT.brand.name}
-            </span>
-            
-          </div>
+        <div className="pl-1 pt-1">
+          <ReplicaWordmark width={112} />
         </div>
 
         {/* Lista de enlaces */}

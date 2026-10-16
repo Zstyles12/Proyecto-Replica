@@ -15,7 +15,7 @@ export const Directorio: React.FC = () => {
   const options = [{ key: "all", label: "Todos" }, ...SPECIALTIES.map((s) => ({ key: s, label: s }))];
 
   return (
-    <div className="mx-auto max-w-[680px] space-y-4">
+    <div className="mx-auto max-w-[680px] space-y-4 lg:mx-0">
       <PageHeader title="Psicólogos" fallback="/chat" />
       <p className="text-[15px] leading-[21px] text-muted-foreground">Todos tienen su licencia profesional verificada.</p>
 

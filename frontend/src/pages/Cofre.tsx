@@ -15,7 +15,7 @@ export const Cofre: React.FC = () => {
   const list = tab === "guardadas" ? saved : replies;
 
   return (
-    <div className="mx-auto max-w-[680px] space-y-5">
+    <div className="mx-auto max-w-[680px] space-y-5 lg:mx-0">
       <PageHeader title="Mi cofre" fallback="/" />
       <Enter className="space-y-3">
         <p className="px-1 text-[15px] leading-[21px] text-muted-foreground">
@@ -29,8 +29,8 @@ export const Cofre: React.FC = () => {
           value={tab}
           onChange={setTab}
           options={[
-            { value: "guardadas", label: `Guardadas · ${saved.length}` },
-            { value: "replicas", label: `De tus réplicas · ${replies.length}` },
+            { value: "guardadas", label: "Guardadas" },
+            { value: "replicas", label: "De tus réplicas" },
           ]}
         />
       </Enter>

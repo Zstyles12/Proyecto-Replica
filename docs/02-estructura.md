@@ -12,9 +12,11 @@
 | Lenguaje | TypeScript estricto | TypeScript estricto (`"strict": true`) |
 | Estilos | NativeWind (Tailwind 3), colores en `theme/colors.ts` | Tailwind 3, colores como variables CSS en `src/index.css` con los valores de `DESIGN.md` §3.3; el config debe aceptar opacidad sobre los tokens (`DESIGN-WEB.md` §7) |
 | Componentes base | React Native Reusables | Componentes propios en `components/ui` (sin librería de componentes) |
-| Animación | Reanimated 4 | Transiciones y `@keyframes` de CSS con los tokens de `DESIGN.md` §7; `requestAnimationFrame` solo donde haga falta (la planta de la bienvenida) |
+| Animación | Reanimated 4 | Transiciones y `@keyframes` de CSS con los tokens de `DESIGN.md` §7; `requestAnimationFrame` solo donde haga falta (la planta de la bienvenida y la firma que se arma, con las líneas de tiempo del kit de marca) |
 | Efectos y gráficas | Skia y react-native-svg | SVG del navegador |
 | Iconos | lucide-react-native | lucide-react |
+| Marca | `components/brand/logo.tsx` y `logo-motion.tsx` (Skia), geometría generada por el kit (`docs/marca`) | `components/brand/Logo.tsx` y `LogoMotion.tsx` (SVG); la geometría y las líneas de tiempo se copian del kit de la app con `npm run marca` |
+| Fuentes | expo-font | `@fontsource` (Alegreya y Alegreya Sans alojadas en la web, sin Google Fonts) |
 | Estado | Stores propios con `useSyncExternalStore` | Lo mismo: stores pequeños en TypeScript puro, con `useSyncExternalStore` |
 | Guardado local | expo-sqlite (kv-store) | `localStorage` mientras todo es simulado; IndexedDB cuando llegue el guardado sin conexión |
 | Base de datos y usuarios | Supabase | **El mismo proyecto de Supabase**, mismas tablas y reglas (`03-base-de-datos.md`) |
@@ -36,7 +38,7 @@ Cada etapa solo ve sus pantallas. Igual que `lib/session.ts` de la app: la sesi�
    - El código se verifica solo al escribir el sexto dígito, se puede reenviar a los 60 s y "Cambiar correo" vuelve atrás.
 3. **Consentimiento** (`/consentimiento`): las cuatro promesas de la app y tres casillas (18 años o más; términos y privacidad, con enlaces a `/legal/terminos` y `/legal/privacidad`; una IA lee las notas). Si cambia `TERMS_VERSION`, se vuelve a pedir.
 4. **Configuración** (`/configurar`): un paso por pantalla. Nombre (obligatorio; Apple o Google lo traen), qué te trae (6 opciones con ícono, se puede omitir), tono (suave, profundo o directo) y hora de la réplica del día (20:00 o 22:00).
-5. **Listo** (`/listo`): "Todo listo, {nombre}", la marca se teje y lleva a la primera nota.
+5. **Listo** (`/listo`): "Todo listo, {nombre}", la firma «Se escribe y florece» y lleva a la primera nota.
 
 Quien entra con una cuenta que ya existía va directo a la app. Hasta que exista Supabase todo es simulado (`services/auth`), con el mismo contrato que la app (`services/auth/types.ts`): cualquier código de 6 dígitos entra y `000000` simula uno equivocado; cualquier contraseña de 8 o más entra y `equivocada` simula una incorrecta.
 
@@ -102,12 +104,13 @@ frontend/src/
     ui/                  piezas base (botón, tarjeta, pastilla, ventana, segmentado…)
     motion/              primitivas de movimiento (corazón, entrada, texto palabra por palabra…)
     layout/              barra lateral, barra inferior y layout principal
-    brand/               marca, cofre, planta de la racha, bienvenida
+    brand/               marca (logo, firma animada, geometría del kit), cofre, planta de la racha, bienvenida
   features/              por función: auth, journal (Inicio), notes, care (chat), cofre, profile, evolution
   data/                  textos de cada pantalla (*Content.ts): fuente del copy
   hooks/                 hooks compartidos (tema, movimiento reducido…)
   lib/                   utilidades (sesión, fechas, sonidos, almacenamiento, recorridos)
   services/              servicios reemplazables, hoy simulados (auth, ai)
+frontend/scripts/marca.mjs   copia del kit de marca de la app lo que usa la web (npm run marca)
 ```
 
 Cuando llegue el backend se suman `lib/supabase/` y `lib/offline/`.

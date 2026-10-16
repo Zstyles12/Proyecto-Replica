@@ -4,7 +4,8 @@ import { HeartHandshake, Lock, LockKeyhole, Sparkles, UsersRound, type LucideIco
 import { AuthScaffold } from "../../features/auth/components/AuthScaffold";
 import { CheckRow, ChoiceCard, IntentionPicker } from "../../features/auth/components/Choices";
 import { INTENTION_TITLES } from "../../features/auth/intentions";
-import { LogoMark } from "../../components/brand/LogoMark";
+import { LogoMotion } from "../../components/brand/LogoMotion";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { Button } from "../../components/ui/Button";
 import { TONES } from "../../features/profile/tones";
 import { firstName, updateProfile, useProfile, type DayReplyHour, type ReplyTone } from "../../features/profile/store";
@@ -226,26 +227,27 @@ export const Configurar: React.FC<{ onFinish: () => void }> = ({ onFinish }) => 
 
 // ─── Todo listo ──────────────────────────────────────────────────────────────
 
-const WEAVE_MS = 900;
+// Cuándo arranca la firma. El sonido sale 50 ms antes: es el silencio con que empieza cada sonido.
+const SIGN_DELAY = 250;
 
-// El cierre de la configuración: la marca se teje (la ida y la vuelta, como cada nota y su réplica) y
-// la hoja en blanco espera.
+// El cierre de la configuración: la firma se escribe y florece (docs/marca de la app, Movimiento · A),
+// con su sonido si los sonidos están activados, y la hoja en blanco espera.
 export const Listo: React.FC = () => {
   const { name } = useProfile();
   const first = firstName(name);
+  const reduced = useReducedMotion();
 
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    // La campanita llega cuando el hilo vuelve.
-    const t = setTimeout(() => playSound("replica"), 250 + WEAVE_MS * 1.2);
+    if (reduced) return;
+    const t = setTimeout(() => playSound("firma"), SIGN_DELAY - 50);
     return () => clearTimeout(t);
-  }, []);
+  }, [reduced]);
 
   return (
     <div className="flex min-h-screen flex-col bg-background bg-warp-lines">
       <main className="mx-auto flex w-full max-w-[480px] flex-1 flex-col items-center justify-center gap-10 px-8">
-        <LogoMark size={148} weave />
-        <div className="enter space-y-3 text-center" style={{ animationDelay: "900ms" }}>
+        <LogoMotion motion="escribe" width={186} play delay={SIGN_DELAY} />
+        <div className="enter space-y-3 text-center" style={{ animationDelay: reduced ? "0ms" : "1500ms" }}>
           <h1 className="font-replica text-[28px] font-normal leading-[34px] tracking-[-0.3px] text-foreground">
             {first ? `Todo listo, ${first}` : "Todo listo"}
           </h1>
@@ -254,7 +256,7 @@ export const Listo: React.FC = () => {
           </p>
         </div>
       </main>
-      <div className="enter mx-auto w-full max-w-[480px] px-5 pb-[max(1rem,env(safe-area-inset-bottom))] md:pb-12" style={{ animationDelay: "1100ms" }}>
+      <div className="enter mx-auto w-full max-w-[480px] px-5 pb-[max(1rem,env(safe-area-inset-bottom))] md:pb-12" style={{ animationDelay: reduced ? "0ms" : "1800ms" }}>
         <Button size="lg" className="w-full" onClick={() => sessionActions.completeSetup()} autoFocus>
           Escribir mi primera nota
         </Button>

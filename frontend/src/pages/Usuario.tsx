@@ -112,7 +112,7 @@ export const Usuario: React.FC = () => {
               Últimos 30 días
             </span>
           </div>
-          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2.5">
             <MetricTile
               icon={Sprout}
               label="Racha"

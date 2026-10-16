@@ -41,7 +41,7 @@ export const PsicologoPerfil: React.FC = () => {
   };
 
   return (
-    <div className="mx-auto max-w-[680px] space-y-6">
+    <div className="mx-auto max-w-[680px] space-y-6 lg:mx-0">
       <PageHeader title="" fallback="/chat" />
 
       <Enter className="flex flex-col items-center gap-3 text-center">

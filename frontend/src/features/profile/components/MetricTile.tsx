@@ -47,7 +47,7 @@ export const MetricTile: React.FC<MetricTileProps> = ({
       }`}
     >
       <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground font-voice truncate pr-2">
+        <span className="text-xs text-muted-foreground font-voice pr-2">
           {label}
         </span>
         <div
@@ -75,7 +75,7 @@ export const MetricTile: React.FC<MetricTileProps> = ({
           )}
         </div>
 
-        <p className="text-[11px] text-voice font-medium truncate">
+        <p className="text-[11px] text-voice font-medium">
           {caption}
         </p>
       </div>

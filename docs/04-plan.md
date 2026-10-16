@@ -2,9 +2,11 @@
 
 > La web se construye primero completa con datos simulados, igual que la app, y después se conecta al backend compartido. La referencia de cada pantalla es la app (`../replica mobile/zairo`), que **solo se lee**. Cada fase termina con la verificación de `AGENTS.md` ("Antes de dar algo por terminado") y un commit.
 
-## Dónde estamos (1 de octubre de 2026)
+## Dónde estamos (16 de octubre de 2026)
 
-**Fases 0 a 8 hechas** en la rama `alineacion-app` (sin commit, a la espera de revisión), con el contraste y la carga en 3G ya medidos. **Fase 9 a medias:** Chrome y Firefox de escritorio probados. Faltan Chrome Android, Safari (iOS y escritorio) y el dictado con micrófono real en Chrome.
+**Fases 0 a 8 hechas** (commit "etapa 1", 12 de octubre), con el contraste y la carga en 3G ya medidos. **Fase 9 a medias:** Chrome y Firefox de escritorio probados. Faltan Chrome Android, Safari (iOS y escritorio) y el dictado con micrófono real en Chrome.
+
+**16 de octubre:** la app adoptó su marca nueva (manual y kit en su `docs/marca`). Se volvió a copiar `DESIGN.md` y se acordó que la web tiene interfaces propias cuando le hacen falta (`AGENTS.md`, `DESIGN-WEB.md` §1). **Fases 10 y 11 hechas:** la marca en la web y las correcciones y mejoras propias del navegador (sin commit, a la espera de revisión).
 
 ### Punto de partida (30 de septiembre de 2026)
 
@@ -161,6 +163,27 @@ Traducir la lógica de la app (TypeScript puro) y dejar de usar los servicios ac
 - [x] Firefox de escritorio (157): el mismo recorrido a 1280 y a 390 px, sin errores ni desborde. Se ve igual que en Chrome (1 de octubre).
 - [ ] El recorrido completo (registro → primera nota → réplica → segunda nota → Notas → Chat) en cada navegador. Hecho en Chrome y Firefox de escritorio; faltan los teléfonos y Safari.
 
+### Fase 10 — La marca en la web (`DESIGN-WEB.md` §9)
+
+- [x] `npm run marca` copia del kit de la app la geometría, las líneas de tiempo, los íconos web, el ícono de carga y la firma sonora.
+- [x] Piezas del logo (ícono, flor, logotipo y firmas) en SVG con los tokens; se borró `LogoMark`.
+- [x] Movimiento: «Ola» en la bienvenida y «Se escribe y florece» en "Todo listo", con el evaluador de la app y "reducir movimiento" (aparece completa, y el texto y el botón sin espera).
+- [x] Barra lateral con el logotipo y el anillado del cuaderno en el borde (`DESIGN-WEB.md` §3); pasos del registro con el ícono.
+- [x] Pestaña: la flor como favicon (reemplaza al de la plantilla de Vite, que se borró junto con `icons.svg`) y un título por sección.
+- [x] Ícono quieto en `index.html` mientras carga la app. En 3G se ve desde la primera pintura (1,4 s en 3G rápida, 4,7 s en 3G lenta) en vez de pantalla en blanco hasta que llega la app (2,1 y 7 s).
+- [x] Imagen para compartir como la nueva de la app: renglones, sin halos, solo el logotipo (`features/cofre/shareImage.ts`).
+- [x] Alegreya y Alegreya Sans alojadas en la web (`@fontsource`, solo caracteres latinos), sin Google Fonts.
+- [x] Verificación: tipos, lint y build; capturas a 375, 767, 768, 1023, 1024 y 1440 px en claro y oscuro sin desborde; Chrome y Firefox; "reducir movimiento"; carga en 3G. No hay controles nuevos para el teclado ni texto nuevo para el contraste.
+- [ ] Pendiente: los sonidos siguen en WAV (la firma pesa 345 kB). Comprimirlos necesita `ffmpeg`, que no está instalado. Solo se descargan si se activan los sonidos.
+
+### Fase 11 — Interfaces propias para el navegador
+
+- [x] Revisión pantalla por pantalla de qué se ve o se usa mejor distinto en el navegador (teléfono y computadora), con capturas.
+- [x] Un plan por pantalla, aprobado antes de implementar; cada decisión se anota en `DESIGN-WEB.md`.
+- [x] Correcciones de paridad y escritorio: Mi cofre sin contadores (`Cofre.tsx`); barras de ánimo proporcionales al total de días con ánimo y sin porcentajes (`MoodBars.tsx`); curva sin globo flotante repetido y con textos de al menos 12 px (`MoodCurve.tsx`); métricas de Usuario en cuadrícula 2×2 sin truncado (`Usuario.tsx`, `MetricTile.tsx`); títulos de pestaña `"Soy psicólogo · Replica"` y `"Psicólogo · Replica"` (`DocumentTitle.tsx`); cabecera del Chat oculta desde 1024 px con nombre accesible (`Chat.tsx`); mismo borde izquierdo desde 1024 px (`lg:mx-0`) en todas las pantallas con sesión iniciada.
+- [x] Revisión de Claude sobre lo implementado con Gemini (16 de octubre): contraste del calendario (los días con 2 notas tenían 2,97:1 y 1,99:1), celdas de 44 px, fechas fijas de nuevo a 13 px, texto "Distribución de ánimos" recuperado, "Tu día" de hoy con la línea "Tu réplica del día llega a las…" y la luna en malva, barras con token de movimiento y sin animación con "reducir movimiento".
+- [x] Propuestas aprobadas: escribir sobre los renglones de 24 px dentro de la hoja de Inicio (`WriterSheet.tsx`, `index.css`); calendario mensual tejido (`MonthCalendar.tsx`) en el panel derecho de Notas y encabezados de fecha fijos al bajar (`Notas.tsx`); "Tu día" (`/replica-dia/:dia`) muestra las notas del día y el aviso de cuándo llega la réplica cuando aún no se ha generado (`TuDia.tsx`).
+
 ---
 
 ## Etapa B — Backend (compartido con el equipo de la app)
@@ -176,7 +199,8 @@ Traducir la lógica de la app (TypeScript puro) y dejar de usar los servicios ac
 ## Etapa C — Prueba cerrada
 
 - [ ] Desplegar con HTTPS (Vercel o Netlify).
-- [ ] Evaluar si conviene una PWA instalable (notificaciones en iOS).
+- [ ] Evaluar si conviene una PWA instalable (notificaciones en iOS). Si sí, el manifiesto con los íconos del kit (`icon-192`, `icon-512`, `icon-maskable-512`).
+- [ ] Enlace compartido: `og-claro-1200x630.png`, descripción y `theme-color` en `index.html` (necesitan la dirección final).
 - [ ] Sumar psicólogos reales al piloto, con el mismo directorio que la app.
 - [ ] Medir lo mismo que la app: notas por usuario por semana, cuántos vuelven y uso del chat.
 
@@ -189,7 +213,7 @@ Traducir la lógica de la app (TypeScript puro) y dejar de usar los servicios ac
 **Compartido con el equipo de la app** (no se decide solo desde la web):
 - Cómo encuentra el usuario a su psicólogo.
 - Quién verifica a los psicólogos y desde dónde (un panel de administración en la web es candidato).
-- Logo definitivo y set final de ánimos.
+- Set final de ánimos. (El logo ya está definido: manual y kit en `docs/marca` de la app.)
 
 ## Pausado (igual que la app)
 

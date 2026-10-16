@@ -5,6 +5,7 @@ import { Button } from "../components/ui/Button";
 import { Enter } from "../components/motion/Motion";
 import { NotesHeader } from "../features/notes/components/NotesHeader";
 import { FilterBar } from "../features/notes/components/FilterBar";
+import { MonthCalendar } from "../features/notes/components/MonthCalendar";
 import { DayReplyEntry, NoteCard } from "../features/notes/components/NoteCard";
 import { applyFilters, filterValues, NO_FILTER, type NoteFilter } from "../features/notes/filters";
 import { useFavoriteNoteIds } from "../features/notes/favorites";
@@ -54,6 +55,30 @@ export const Notas: React.FC = () => {
     return notes.filter((n) => new Date(n.createdAt) >= since).reduce((sum, n) => sum + wordCount(n.text), 0);
   }, [notes]);
 
+  const handleSelectDay = (targetDayKey: string) => {
+    const scrollToTarget = () => {
+      const el = document.getElementById(`dia-${targetDayKey}`);
+      if (el) {
+        el.scrollIntoView({
+          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+          block: "start",
+        });
+      }
+    };
+
+    const isDayVisible = groups.some((g) => g.key === targetDayKey);
+    if (narrowed && !isDayVisible) {
+      setFilter(NO_FILTER);
+      setQuery("");
+      setSearching(false);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(scrollToTarget);
+      });
+    } else {
+      scrollToTarget();
+    }
+  };
+
   // La primera vez: cómo encontrar tus notas.
   useCancelToursOnLeave(["notas"]);
   useEffect(() => {
@@ -66,7 +91,7 @@ export const Notas: React.FC = () => {
 
   if (notes.length === 0) {
     return (
-      <div className="mx-auto max-w-[680px] space-y-8">
+      <div className="mx-auto max-w-[680px] space-y-8 lg:mx-0">
         <h1 className="font-replica text-[28px] font-normal leading-[34px] tracking-[-0.3px] text-foreground">Notas</h1>
         <div className="space-y-3 rounded-lg bg-surface-sunken px-8 py-12 text-center">
           <NotebookText size={28} className="mx-auto text-voice" aria-hidden="true" />
@@ -106,8 +131,8 @@ export const Notas: React.FC = () => {
         ) : (
           groups.map((group, i) => (
             <Enter key={group.key} index={Math.min(i, 6)}>
-              <section aria-label={group.label} className="space-y-3">
-                <h2 className="px-1 pb-0 pt-5 text-[13px] font-semibold uppercase tracking-[0.6px] text-muted-foreground">
+              <section id={`dia-${group.key}`} aria-label={group.label} className="scroll-mt-4 space-y-2.5">
+                <h2 className="sticky top-0 z-10 -mx-1 bg-background px-1 py-2 text-[13px] font-semibold uppercase tracking-[0.6px] text-muted-foreground">
                   {group.label}
                 </h2>
                 {group.night ? <DayReplyEntry night={group.night} late={group.late} /> : null}
@@ -121,7 +146,7 @@ export const Notas: React.FC = () => {
       </div>
 
       {/* Escritorio: tu mes en números (solo datos reales) y la hoja a un toque (DESIGN-WEB.md §4). */}
-      <aside className="hidden lg:sticky lg:top-8 lg:block" aria-label="Tu mes">
+      <aside className="hidden lg:sticky lg:top-8 lg:block space-y-4" aria-label="Tu mes">
         <div className="space-y-4 rounded-lg border border-border/40 bg-surface-raised p-5 shadow-raised dark:shadow-none">
           <p className="text-[12px] font-semibold uppercase tracking-[0.8px] text-muted-foreground">Últimos 30 días</p>
           <dl className="grid grid-cols-2 gap-3">
@@ -141,6 +166,10 @@ export const Notas: React.FC = () => {
             <Feather size={16} aria-hidden="true" />
             Escribir
           </Link>
+        </div>
+
+        <div className="rounded-xl border border-border/70 bg-surface-raised p-5 shadow-raised dark:shadow-none">
+          <MonthCalendar notes={notes} onSelectDay={handleSelectDay} />
         </div>
       </aside>
     </div>

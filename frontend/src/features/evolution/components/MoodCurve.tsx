@@ -108,6 +108,30 @@ export const MoodCurve: React.FC<MoodCurveProps> = ({ points, axis, period }) =>
   const activeIndex = hoveredIndex !== null ? hoveredIndex : selectedIndex;
   const activePoint = activeIndex !== null ? coords[activeIndex] : null;
 
+  const handlePointer = React.useCallback(
+    (clientX: number, target: SVGSVGElement, isTouch = false) => {
+      if (!coords.length) return;
+      const rect = target.getBoundingClientRect();
+      if (!rect.width) return;
+      const relX = ((clientX - rect.left) / rect.width) * VIEW_WIDTH;
+      let best = 0;
+      let bestDist = Math.abs(coords[0].x - relX);
+      for (let i = 1; i < coords.length; i += 1) {
+        const dist = Math.abs(coords[i].x - relX);
+        if (dist < bestDist) {
+          best = i;
+          bestDist = dist;
+        }
+      }
+      if (isTouch) {
+        setSelectedIndex(best);
+      } else {
+        setHoveredIndex(best);
+      }
+    },
+    [coords, VIEW_WIDTH]
+  );
+
   if (points.length === 0) {
     return (
       <div className="py-12 px-4 text-center space-y-2 select-none">
@@ -121,7 +145,7 @@ export const MoodCurve: React.FC<MoodCurveProps> = ({ points, axis, period }) =>
   return (
     <div className="space-y-3 relative select-none">
       {/* Texto de estado superior 1:1 con la experiencia mobile */}
-      <div className="min-h-[28px] flex items-center justify-between text-xs transition-colors py-0.5">
+      <div className="min-h-[26px] flex items-center justify-between text-xs transition-colors py-0.5">
         {activePoint ? (
           <div className="flex items-center gap-2 flex-wrap">
             <span
@@ -143,7 +167,7 @@ export const MoodCurve: React.FC<MoodCurveProps> = ({ points, axis, period }) =>
               <button
                 type="button"
                 onClick={() => setSelectedIndex(null)}
-                className="text-[11px] text-muted-foreground hover:text-foreground underline ml-2 cursor-pointer"
+                className="text-[12px] text-muted-foreground hover:text-foreground underline ml-2 cursor-pointer"
               >
                 Restablecer
               </button>
@@ -161,12 +185,20 @@ export const MoodCurve: React.FC<MoodCurveProps> = ({ points, axis, period }) =>
         )}
       </div>
 
-      {/* Contenedor SVG con desbordamiento visible para tooltips elegantes sin cortes */}
+      {/* Contenedor SVG con desbordamiento visible */}
       <div className="relative w-full overflow-visible">
         <svg
           viewBox={`0 0 ${VIEW_WIDTH} ${HEIGHT}`}
           className="w-full h-auto overflow-visible cursor-default"
           onClick={() => setSelectedIndex(null)}
+          onMouseMove={(e) => handlePointer(e.clientX, e.currentTarget, false)}
+          onMouseLeave={() => setHoveredIndex(null)}
+          onTouchStart={(e) => {
+            if (e.touches[0]) handlePointer(e.touches[0].clientX, e.currentTarget, true);
+          }}
+          onTouchMove={(e) => {
+            if (e.touches[0]) handlePointer(e.touches[0].clientX, e.currentTarget, true);
+          }}
         >
           <defs>
             {/* Gradiente vertical para el área rellena */}
@@ -201,7 +233,7 @@ export const MoodCurve: React.FC<MoodCurveProps> = ({ points, axis, period }) =>
             x={PAD_X}
             y={py(2) - 6}
             fill="var(--subtle)"
-            fontSize={10}
+            fontSize={12}
             fontFamily="system-ui"
           >
             {copy.pleasantLabel}
@@ -232,7 +264,7 @@ export const MoodCurve: React.FC<MoodCurveProps> = ({ points, axis, period }) =>
             x={PAD_X}
             y={py(-2) + 14}
             fill="var(--subtle)"
-            fontSize={10}
+            fontSize={12}
             fontFamily="system-ui"
           >
             {copy.difficultLabel}
@@ -306,7 +338,11 @@ export const MoodCurve: React.FC<MoodCurveProps> = ({ points, axis, period }) =>
                       e.currentTarget.parentElement?.querySelectorAll<SVGGElement>("g[role='button']") ?? []
                     );
                     const at = points.indexOf(e.currentTarget);
-                    points[at + (e.key === "ArrowRight" ? 1 : -1)]?.focus();
+                    const next = at + (e.key === "ArrowRight" ? 1 : -1);
+                    if (next >= 0 && next < points.length) {
+                      setSelectedIndex(next);
+                      points[next]?.focus();
+                    }
                   }
                 }}
               >
@@ -349,7 +385,7 @@ export const MoodCurve: React.FC<MoodCurveProps> = ({ points, axis, period }) =>
                   y={HEIGHT - 6}
                   textAnchor="middle"
                   fill="var(--subtle)"
-                  fontSize={11}
+                  fontSize={12}
                   fontWeight={500}
                   fontFamily="system-ui"
                 >
@@ -359,63 +395,11 @@ export const MoodCurve: React.FC<MoodCurveProps> = ({ points, axis, period }) =>
             );
           })}
         </svg>
-
-        {/* Tooltip inteligente con anclaje perimetral proporcional para NUNCA desalinearse ni cortarse */}
-        {activePoint && (() => {
-          const xPercent = (activePoint.x / VIEW_WIDTH) * 100;
-          const yPercent = (activePoint.y / HEIGHT) * 100;
-          const isNearTop = yPercent < 45;
-          const moodColor =
-            moods.find((m) => m.id === activePoint.point.mood)?.colorVar ||
-            "var(--voice)";
-
-          const inlineStyle: React.CSSProperties = {
-            top: `${yPercent.toFixed(1)}%`,
-          };
-          let posClasses = "";
-
-          // Anclaje horizontal responsivo
-          if (xPercent > 70) {
-            inlineStyle.right = "8px";
-          } else if (xPercent < 30) {
-            inlineStyle.left = "8px";
-          } else {
-            inlineStyle.left = `${xPercent.toFixed(1)}%`;
-            posClasses += "-translate-x-1/2 ";
-          }
-
-          // Anclaje vertical proporcional según altura del punto
-          if (isNearTop) {
-            posClasses += "mt-3";
-          } else {
-            posClasses += "-translate-y-full -mt-3";
-          }
-
-          return (
-            <div
-              className={`absolute z-30 pointer-events-none p-3 rounded-2xl bg-surface-raised border border-border/70 shadow-raised text-xs space-y-1 transition-all duration-100 min-w-[170px] max-w-[260px] animate-section-enter ${posClasses}`}
-              style={inlineStyle}
-            >
-              <div className="flex items-center justify-between gap-2 border-b border-border/30 pb-1.5">
-                <span className="font-semibold text-foreground truncate">
-                  {activePoint.point.label}
-                </span>
-                <span
-                  className="w-2.5 h-2.5 rounded-full shrink-0 shadow-xs"
-                  style={{ backgroundColor: moodColor }}
-                />
-              </div>
-              <p className="text-[11px] text-muted-foreground font-voice leading-snug">
-                {activePoint.point.detail}
-              </p>
-            </div>
-          );
-        })()}
       </div>
 
       {/* Si solo hay 1 punto en el período, avisar amablemente */}
       {points.length === 1 && (
-        <p className="text-[11px] text-subtle font-voice text-center">
+        <p className="text-[12px] text-subtle font-voice text-center">
           Se traza la curva continua al tener dos o más notas con ánimo en este período.
         </p>
       )}
