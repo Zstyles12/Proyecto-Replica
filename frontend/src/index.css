@@ -169,11 +169,44 @@
   }
 }
 
+/* El panel lateral (Dialog variant="side", DESIGN-WEB.md §10): en el teléfono es la hoja a pantalla
+   completa; desde 768 px entra desde la derecha. */
+@keyframes sideIn {
+  from { transform: translateX(100%); }
+  to { transform: none; }
+}
+@keyframes sideOut {
+  from { transform: none; }
+  to { transform: translateX(100%); }
+}
+@media (min-width: 768px) {
+  .dialog-root[data-variant="side"] .dialog-panel {
+    animation: sideIn 300ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  }
+  .dialog-root[data-variant="side"][data-state="closed"] .dialog-panel {
+    animation: sideOut 180ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  }
+}
+
+/* Lo que está por llegar (components/ui/Skeleton.tsx): un brillo lento, quieto con "reducir movimiento". */
+@keyframes skeletonShimmer {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+.skeleton {
+  animation: skeletonShimmer 1600ms ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .dialog-panel {
+  .skeleton {
+    animation: none;
+  }
+  .dialog-panel,
+  .dialog-root[data-variant="side"] .dialog-panel {
     animation: dialogFadeIn 180ms linear both;
   }
-  .dialog-root[data-state="closed"] .dialog-panel {
+  .dialog-root[data-state="closed"] .dialog-panel,
+  .dialog-root[data-variant="side"][data-state="closed"] .dialog-panel {
     animation: dialogFadeOut 120ms linear both;
   }
 }
@@ -465,6 +498,18 @@
 @layer utilities {
   .text-fluid-title {
     font-size: clamp(28px, 3vw, 44px);
+  }
+
+  /* Área táctil de 44 px sin cambiar el dibujo (AGENTS.md, Accesibilidad), como las celdas de
+     MonthCalendar. La pieza necesita una posición (relative o absolute) y no recortar con overflow. */
+  .tap-area::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
   }
 }
 

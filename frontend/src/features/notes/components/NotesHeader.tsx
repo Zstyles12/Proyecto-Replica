@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Search, X } from "lucide-react";
+import { Download, Search, X } from "lucide-react";
 
 /**
  * El título de Notas y su búsqueda comparten la misma fila (features/notes/components/notes-header.tsx
@@ -11,7 +11,9 @@ export const NotesHeader: React.FC<{
   onQueryChange: (q: string) => void;
   searching: boolean;
   onSearchingChange: (searching: boolean) => void;
-}> = ({ query, onQueryChange, searching, onSearchingChange }) => {
+  // Abre la hoja de exportar (DESIGN-WEB.md §11). Mientras se busca, el campo ocupa la fila.
+  onExport?: () => void;
+}> = ({ query, onQueryChange, searching, onSearchingChange, onExport }) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -45,7 +47,19 @@ export const NotesHeader: React.FC<{
           />
         </div>
       ) : (
-        <h1 className="flex-1 font-replica text-[28px] font-normal leading-[34px] tracking-[-0.3px] text-foreground">Notas</h1>
+        <>
+          <h1 className="flex-1 font-replica text-[28px] font-normal leading-[34px] tracking-[-0.3px] text-foreground">Notas</h1>
+          {onExport ? (
+            <button
+              type="button"
+              onClick={onExport}
+              aria-label="Exportar tus notas"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface text-foreground transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice"
+            >
+              <Download size={19} aria-hidden="true" />
+            </button>
+          ) : null}
+        </>
       )}
       <button
         type="button"

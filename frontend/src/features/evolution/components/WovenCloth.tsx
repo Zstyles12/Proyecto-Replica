@@ -68,17 +68,18 @@ export const WovenCloth: React.FC<WovenClothProps> = ({ columns }) => {
         {/* Columna Izquierda: Matriz de 12 semanas y leyenda */}
         <div className="space-y-3">
           <div className="overflow-x-auto pb-1 -mx-1 px-1">
-            <div className="inline-flex gap-1.5 min-w-[320px]">
+            <div className="inline-flex gap-1.5">
               {/* Etiquetas de fila (L, X, V, D) perfectamente alineadas con las celdas */}
               <div className="flex flex-col gap-1.5 text-[10px] text-subtle font-mono select-none pr-1">
                 {[0, 1, 2, 3, 4, 5, 6].map((row) => (
-                  <span key={row} className="h-4 flex items-center justify-center">
+                  <span key={row} className="h-[18px] flex items-center justify-center">
                     {rowLabels[row] || ""}
                   </span>
                 ))}
               </div>
 
-              {/* 12 Columnas de Semanas */}
+              {/* 12 Columnas de Semanas. Celdas de 18 px a 6 px: 24 px entre centros (WCAG 2.5.8). Los 44 px
+                  no caben en 12 semanas a 375 px. */}
               {columns.map((col, colIdx) => (
                 <div key={colIdx} className="flex flex-col gap-1.5">
                   {col.map((day, rowIdx) => (
@@ -107,7 +108,7 @@ export const WovenCloth: React.FC<WovenClothProps> = ({ columns }) => {
                           setHoveredDay(null);
                         }
                       }}
-                      className={`w-4 h-4 rounded-[4px] border transition-all duration-150 cursor-pointer active:scale-95 disabled:cursor-default disabled:pointer-events-none disabled:active:scale-100 ${getCellColor(
+                      className={`w-[18px] h-[18px] rounded-[4px] border transition-all duration-150 cursor-pointer active:scale-95 disabled:cursor-default disabled:pointer-events-none disabled:active:scale-100 ${getCellColor(
                         day,
                         activeDay === day
                       )}`}

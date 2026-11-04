@@ -1,3 +1,5 @@
+import { paceReply } from './pace';
+import { showsRisk } from '../../lib/risk';
 import type { ReplyContent, ReplyRequest, ReplyService } from './types';
 
 // Datos sintéticos: réplicas de ejemplo mientras no exista el backend con Gemini.
@@ -160,9 +162,23 @@ function addressed(headline: string, name?: string) {
   return `${first}, ${headline.charAt(0).toLowerCase()}${headline.slice(1)}`;
 }
 
+// La misma réplica de cuidado del servidor (_shared/voice.ts): sin consejos, con calidez y con la
+// ayuda en crisis a la vista.
+function careReply(name?: string): ReplyContent {
+  const opening = name ? `${name}, leí` : 'Leí';
+  return {
+    headline: 'Gracias por escribir esto aquí.',
+    body: `${opening} lo que escribiste y me importa. Lo que sientes merece más compañía de la que yo puedo darte: no tienes por qué cargarlo a solas. Hablar hoy con alguien de confianza o con una línea de ayuda de tu país puede acompañarte de verdad.`,
+    questions: ['¿Hay alguien a quien puedas escribirle hoy?'],
+    learning: 'No tienes que cargarlo a solas.',
+    risk: true,
+  };
+}
+
 export function buildMockReply(
   request: Pick<ReplyRequest, 'text' | 'tone' | 'name'>
 ): ReplyContent {
+  if (showsRisk(request.text)) return careReply(request.name);
   const quote = quoteFrom(request.text);
   const template = bestTemplate(request.text);
   const base = template ? template.build(quote) : FALLBACK(quote);
@@ -242,31 +258,19 @@ export function buildMockDayReply(
       text: dayComment(n.text, i, all.length, late),
     })),
   };
+  // Con riesgo, la réplica del día tampoco analiza: acompaña, y cada nota conserva su comentario.
+  if (showsRisk(request.text)) return { ...careReply(request.name), comments: reply.comments };
   return reply;
 }
 
 const FIRST_DELAY = 650;
 
 export const mockReplyService: ReplyService = {
-  streamReply(request, { onHeadline, onWord, onDone }) {
+  streamReply(request, handlers) {
     const reply =
       request.kind === 'day' || request.kind === 'late'
         ? buildMockDayReply(request)
         : buildMockReply(request);
-    const words = reply.body.split(' ');
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    let elapsed = FIRST_DELAY;
-
-    timers.push(setTimeout(() => onHeadline(reply.headline), elapsed));
-    elapsed += 700;
-    words.forEach((word, i) => {
-      // Ritmo irregular, como un modelo real: pausas más largas después de una coma o un punto.
-      const pause = /[.,?]$/.test(words[i - 1] ?? '') ? 180 : 0;
-      elapsed += 50 + ((i * 37) % 55) + pause;
-      timers.push(setTimeout(() => onWord(word), elapsed));
-    });
-    timers.push(setTimeout(() => onDone(reply), elapsed + 60));
-
-    return () => timers.forEach(clearTimeout);
+    return paceReply(reply, handlers, FIRST_DELAY);
   },
 };

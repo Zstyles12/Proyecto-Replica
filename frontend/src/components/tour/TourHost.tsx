@@ -1,4 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { tutorials, useActiveTour } from "../../lib/tutorials";
 
 type Rect = { x: number; y: number; width: number; height: number };
@@ -9,7 +10,8 @@ const CARD_GAP = 14;
  * El recorrido (DESIGN.md §6, Recorridos; components/tour/tour-host.tsx de la app): la pantalla se
  * oscurece, el elemento explicado queda recortado con un borde blanco fino, y una tarjeta con una
  * línea de texto, "Saltar todo", "1 de 5" y "Siguiente" aparece debajo o encima, donde quepa.
- * Escape lo cierra.
+ * Escape lo cierra. Como las ventanas (ui/Dialog.tsx), va fuera de la página y la deja inerte: Tab
+ * recorre solo la tarjeta, y al cerrar el foco vuelve a donde estaba.
  */
 export const TourHost: React.FC = () => {
   const active = useActiveTour();
@@ -48,6 +50,20 @@ export const TourHost: React.FC = () => {
     };
   }, [step]);
 
+  const open = active !== null;
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const root = document.getElementById("root");
+    // Si ya había una ventana abierta, ella devuelve la página al cerrarse.
+    const wasInert = root?.hasAttribute("inert") ?? false;
+    root?.setAttribute("inert", "");
+    return () => {
+      if (!wasInert) root?.removeAttribute("inert");
+      previous?.focus();
+    };
+  }, [open]);
+
   useEffect(() => {
     if (!active) return;
     nextRef.current?.focus();
@@ -73,7 +89,7 @@ export const TourHost: React.FC = () => {
     ? { top: rect.y + rect.height + CARD_GAP, left: cardLeft, width: cardWidth }
     : { bottom: viewport.h - rect.y + CARD_GAP, left: cardLeft, width: cardWidth };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[70]" role="dialog" aria-modal="true" aria-labelledby="tour-text">
       {/* El recorte: un hueco con borde blanco fino; su sombra enorme oscurece todo lo demás. */}
       <div
@@ -110,6 +126,7 @@ export const TourHost: React.FC = () => {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

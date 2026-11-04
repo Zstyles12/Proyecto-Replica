@@ -2,13 +2,16 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { BadgeCheck, CalendarDays, Compass, Heart, NotebookPen, Palette, RotateCcw, Sprout, Stethoscope, TrendingUp } from "lucide-react";
 import { CofreButton } from "../components/brand/CofreButton";
+import { NAV_ICONS } from "../components/layout/navIcons";
 import { Enter } from "../components/motion/Motion";
+import { NAVIGATION_CONTENT } from "../data/navigationContent";
 import { PhraseCard } from "../features/cofre/components/PhraseCard";
 import { useFavoritePhrases } from "../features/cofre/store";
 import { useNotes } from "../features/journal/store";
 import { MOOD_LABELS, moodColor } from "../features/journal/moods";
 import { recentSummary } from "../features/profile/metrics";
 import { useProfile } from "../features/profile/store";
+import { professional, useProfessional } from "../features/professional/store";
 import { ProfileHero } from "../features/profile/components/ProfileHero";
 import { MetricTile } from "../features/profile/components/MetricTile";
 import { ReplySettings } from "../features/profile/components/ReplySettings";
@@ -17,13 +20,15 @@ import { AppearanceSettings } from "../features/profile/components/AppearanceSet
 import { AccountCard } from "../features/profile/components/AccountCard";
 import { EditProfileModal } from "../features/profile/components/EditProfileModal";
 import { LinkRow } from "../features/profile/components/SettingsCard";
-import { sessionActions, TEST_TOOLS } from "../lib/session";
+import { sessionActions, TEST_TOOLS, useRole } from "../lib/session";
 import { tutorials, useActiveTour, useCancelToursOnLeave } from "../lib/tutorials";
 
 const PSYCHOLOGIST_STATUS = {
   none: "Ofrece tus servicios en Replica",
-  review: "Tu solicitud está en revisión",
-  verified: "Perfil verificado",
+  pending: "Tu solicitud está en revisión",
+  needs_changes: "Hay algo que corregir en tu solicitud",
+  rejected: "Tu solicitud no fue aprobada",
+  approved: "Perfil verificado",
 } as const;
 
 // Las primeras favoritas a la vista; el resto está en Mi cofre.
@@ -37,6 +42,14 @@ type TourCard = "reply" | "privacy" | "appearance" | null;
 export const Usuario: React.FC = () => {
   const navigate = useNavigate();
   const profile = useProfile();
+  const role = useRole();
+  const area = role === "user" ? null : NAVIGATION_CONTENT.areas[role];
+  // El estado de la solicitud propia, si la hay. Un psicólogo ya está verificado.
+  const { application } = useProfessional();
+  useEffect(() => {
+    if (role !== "psychologist") void professional.loadApplication();
+  }, [role]);
+  const applicationStatus = role === "psychologist" ? "approved" : (application.value?.status ?? "none");
   const notes = useNotes();
   const favorites = useFavoritePhrases();
   const [editing, setEditing] = useState(false);
@@ -174,11 +187,20 @@ export const Usuario: React.FC = () => {
 
         <Enter index={5}>
           <div className="space-y-0.5 rounded-lg border border-border/40 bg-surface-raised p-2 shadow-raised dark:shadow-none">
+            {area ? (
+              <LinkRow
+                icon={NAV_ICONS[area.entry.iconName]}
+                tint="voice"
+                title={area.entry.label}
+                subtitle={area.entryHint}
+                onClick={() => navigate(area.entry.path)}
+              />
+            ) : null}
             <LinkRow
-              icon={profile.psychologist.status === "verified" ? BadgeCheck : Stethoscope}
+              icon={applicationStatus === "approved" ? BadgeCheck : Stethoscope}
               tint="voice"
               title="Soy psicólogo o psicóloga"
-              subtitle={PSYCHOLOGIST_STATUS[profile.psychologist.status]}
+              subtitle={PSYCHOLOGIST_STATUS[applicationStatus]}
               onClick={() => navigate("/usuario/psicologo")}
             />
             <LinkRow
@@ -203,13 +225,13 @@ export const Usuario: React.FC = () => {
         <Enter index={6} className="flex flex-col items-center gap-1 pb-2">
           <p className="px-8 text-center font-replica text-[15px] italic leading-[21px] text-subtle">Replica · Un diario que te responde</p>
           <p className="flex items-center gap-1 text-[13px]">
-            <Link to="/legal/terminos" className="rounded-full px-3 py-2 font-medium text-voice hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice">
+            <Link to="/legal/terminos" className="relative tap-area rounded-full px-3 py-2 font-medium text-voice hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice">
               Términos
             </Link>
             <span className="text-muted-foreground" aria-hidden="true">
               ·
             </span>
-            <Link to="/legal/privacidad" className="rounded-full px-3 py-2 font-medium text-voice hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice">
+            <Link to="/legal/privacidad" className="relative tap-area rounded-full px-3 py-2 font-medium text-voice hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice">
               Privacidad
             </Link>
           </p>

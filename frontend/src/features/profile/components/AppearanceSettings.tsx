@@ -42,7 +42,7 @@ export const AppearanceSettings = React.forwardRef<HTMLDivElement, { expanded?: 
               setSoundsEnabled(!sounds);
               if (!sounds) playSound("favorito");
             }}
-            className={`relative h-7 w-12 shrink-0 rounded-full p-0.5 transition-colors duration-small focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice focus-visible:ring-offset-2 ${
+            className={`tap-area relative h-7 w-12 shrink-0 rounded-full p-0.5 transition-colors duration-small focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice focus-visible:ring-offset-2 ${
               sounds ? "bg-voice" : "bg-muted"
             }`}
           >

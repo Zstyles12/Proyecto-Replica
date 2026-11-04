@@ -9,13 +9,23 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Replica · Tu diario</title>
-    <script>
-      // El tema guardado se aplica antes del primer dibujo para que no parpadee (hooks/useTheme.ts).
-      try {
-        var theme = localStorage.getItem("replica-theme");
-        if (theme === "light" || theme === "dark") document.documentElement.setAttribute("data-theme", theme);
-      } catch (e) {}
-    </script>
+    <meta name="description" content="Escribe lo que viviste hoy y recibe una réplica. Un diario personal, con psicólogos verificados cuando los necesites." />
+    <!-- La barra del navegador toma el fondo de cada tema (index.css, --background). -->
+    <meta name="theme-color" content="#F5FBF6" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#131315" media="(prefers-color-scheme: dark)" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- El enlace compartido (DESIGN-WEB.md §9). vite.config.ts vuelve absoluta la imagen al publicar. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="es_LA" />
+    <meta property="og:site_name" content="Replica" />
+    <meta property="og:title" content="Replica · Tu diario" />
+    <meta property="og:description" content="Escribe lo que viviste hoy y recibe una réplica. Un diario personal, con psicólogos verificados cuando los necesites." />
+    <meta property="og:image" content="%SITE_URL%/og-claro-1200x630.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="El logotipo de Replica" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script src="/tema.js"></script>
     <style>
       /* Mientras carga la app: el ícono quieto, al centro. Aparece con un fundido corto solo si la
          carga tarda, para no parpadear cuando es rápida. React lo reemplaza al dibujar. */

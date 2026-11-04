@@ -4,7 +4,7 @@ import { MOOD_LABELS, moodColor, type Mood } from "../../journal/moods";
 import type { NoteFilter } from "../filters";
 
 const scopeClass = (selected: boolean) =>
-  `inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors duration-small focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
+  `relative tap-area inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors duration-small focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
     selected ? "border-voice bg-voice text-voice-foreground" : "border-border/70 text-muted-foreground hover:text-foreground"
   }`;
 
@@ -32,7 +32,7 @@ export const FilterBar = React.forwardRef<
   const hasOptions = moods.length > 0 || tags.length > 0;
 
   const optionClass = (selected: boolean) =>
-    `inline-flex h-9 items-center gap-2 rounded-full border px-3 text-[13px] transition-colors duration-small focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
+    `relative tap-area inline-flex h-9 items-center gap-2 rounded-full border px-3 text-[13px] transition-colors duration-small focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
       selected ? "text-foreground" : "border-transparent bg-surface text-muted-foreground hover:text-foreground"
     }`;
 
@@ -72,7 +72,7 @@ export const FilterBar = React.forwardRef<
             aria-expanded={open}
             aria-controls={panelId}
             aria-label={active ? `Filtros, ${active} activos` : "Filtrar por ánimo o tema"}
-            className={`inline-flex h-9 items-center gap-1.5 rounded-full border pl-3 pr-2.5 text-sm transition-colors duration-small focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
+            className={`relative tap-area inline-flex h-9 items-center gap-1.5 rounded-full border pl-3 pr-2.5 text-sm transition-colors duration-small focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
               active
                 ? "border-voice/45 bg-voice/10 text-foreground"
                 : open
@@ -146,7 +146,7 @@ export const FilterBar = React.forwardRef<
               type="button"
               onClick={() => onChange({ ...filter, mood: null })}
               aria-label={`Quitar filtro ${MOOD_LABELS[filter.mood]}`}
-              className="inline-flex h-9 items-center gap-1.5 rounded-full pl-3 pr-2 text-[13px] font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice"
+              className="relative tap-area inline-flex h-9 items-center gap-1.5 rounded-full pl-3 pr-2 text-[13px] font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice"
               style={{ backgroundColor: `color-mix(in srgb, ${moodColor(filter.mood)} 14%, transparent)` }}
             >
               {MOOD_LABELS[filter.mood]}
@@ -158,7 +158,7 @@ export const FilterBar = React.forwardRef<
               type="button"
               onClick={() => onChange({ ...filter, tag: null })}
               aria-label={`Quitar filtro #${filter.tag}`}
-              className="inline-flex h-9 items-center gap-1.5 rounded-full bg-voice/15 pl-3 pr-2 text-[13px] font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice"
+              className="relative tap-area inline-flex h-9 items-center gap-1.5 rounded-full bg-voice/15 pl-3 pr-2 text-[13px] font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice"
             >
               #{filter.tag}
               <X size={14} className="text-muted-foreground" aria-hidden="true" />

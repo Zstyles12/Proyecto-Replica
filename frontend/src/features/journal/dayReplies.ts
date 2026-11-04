@@ -2,14 +2,19 @@ import { dayKey, dayNotes, dayNotesOf, noteDay, replyModeOf } from './store';
 import type { DayReply, Note } from './types';
 import { getProfile } from '../profile/store';
 import { replyService } from '../../services/ai';
+import { dataService } from '../../services/data';
 import { readString, writeString } from '../../lib/storage';
 import { useSyncExternalStore } from 'react';
 
 // La réplica del día, una por día: llega a la hora elegida (20:00 o 22:00) y lee todo lo que se
-// escribió ese día, salvo las notas privadas. Con Supabase la generará el servidor a esa hora.
+// escribió ese día, salvo las notas privadas. Con Supabase la genera el servidor a esa hora, y aquí
+// solo se reciben. Sin él, se simulan al abrir la web.
 const KEY = 'replica.dayReplies';
+// Cada cuánto se pregunta al servidor si llegó una, además del aviso en tiempo real.
+const REFRESH_MS = 60_000;
 
 function load(): Record<string, DayReply> {
+  if (dataService) return {};
   const raw = readString(KEY);
   if (!raw) return {};
   try {
@@ -31,6 +36,7 @@ let cancel: (() => void) | null = null;
 let catchUpList: Note[] | null = null;
 
 function persist() {
+  if (dataService) return;
   const saved: Record<string, DayReply> = {};
   for (const [k, v] of Object.entries(replies)) {
     const { replyDraft: _draft, ...rest } = v;
@@ -89,11 +95,30 @@ function dueDays(list: Note[]) {
 
 type Kind = 'day' | 'late';
 
+let lastRefresh = 0;
+
 export const dayReplies = {
+  // Lo que hay en el servidor.
+  hydrate(list: DayReply[]) {
+    replies = Object.fromEntries(
+      list.map((r) => [r.kind === 'late' ? lateKey(r.day) : r.day, r])
+    );
+    listeners.forEach((l) => l());
+  },
+
+  async refresh() {
+    lastRefresh = Date.now();
+    if (dataService) dayReplies.hydrate(await dataService.loadDayReplies());
+  },
+
   // Pide las réplicas que falten, una a la vez: la del día de hoy (pasada la hora), las de días en
   // que no se abrió la app a esa hora (para que ninguna nota se quede esperando para siempre) y las
   // últimas réplicas de días ya terminados. Con Supabase las generará el servidor a su hora.
   catchUp(list: Note[]) {
+    if (dataService) {
+      if (Date.now() - lastRefresh > REFRESH_MS) dayReplies.refresh().catch(() => {});
+      return;
+    }
     catchUpList = list;
     if (cancel) return;
     const days = dueDays(list);

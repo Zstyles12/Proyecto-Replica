@@ -1,6 +1,6 @@
 # Replica — web
 
-La versión web de Replica: un diario donde cada nota recibe una réplica, y un canal con psicólogos verificados. Es una adaptación de la app móvil pensada para que también sea agradable en escritorio.
+Replica: un diario donde la IA responde con una réplica, y un canal con psicólogos verificados, pensado para el navegador en el teléfono y en la computadora.
 
 Antes de tocar nada, lee [`../AGENTS.md`](../AGENTS.md) y la documentación de [`../docs`](../docs).
 
@@ -14,7 +14,7 @@ npm run lint                             # oxlint
 npm run build                            # build de producción
 ```
 
-Todo está simulado hasta conectar Supabase (Etapa B):
+Sin variables de entorno, todo funciona simulado:
 
 - **Cuenta:** cualquier contraseña de 8 caracteres o más entra; `equivocada` simula una incorrecta. Cualquier código de 6 dígitos entra; `000000` simula uno equivocado.
 - **Datos:** se guardan en el `localStorage` del navegador. Para empezar de cero, bórralo o usa "Repetir el registro" en Usuario (solo en desarrollo).
@@ -24,7 +24,7 @@ Para probar en un teléfono de la misma red Wi-Fi: `npm run dev -- --host` y abr
 
 ## Variables de entorno
 
-Hoy no hace falta ninguna. Para la Etapa B, copia [`.env.example`](.env.example) como `.env.local` y llénalo; `.env.local` nunca se sube (lo ignora el `.gitignore` de la raíz, el único del proyecto). Las claves reales nunca van en el código ni en los prompts.
+Para usar Supabase, sigue [`../supabase/README.md`](../supabase/README.md): copia [`.env.example`](.env.example) como `.env.local` y llénalo; `.env.local` nunca se sube (lo ignora el `.gitignore` de la raíz, el único del proyecto). Las claves reales nunca van en el código ni en los prompts.
 
 ## Estructura
 
@@ -34,6 +34,6 @@ src/
   components/   piezas base (ui/), movimiento (motion/), layout/, marca (brand/), recorridos (tour/)
   features/     auth, journal (Inicio), notes, care (Chat), cofre, profile, evolution
   lib/          sesión, fechas, sonidos, recorridos, almacenamiento
-  services/     servicios simulados con el mismo contrato que tendrán con Supabase (auth, ai)
+  services/     servicios con versión real y simulada (auth, ai) y el acceso a los datos en Supabase (data)
   data/         textos compartidos (bienvenida, navegación, legales)
 ```

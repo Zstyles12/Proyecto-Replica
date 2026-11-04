@@ -1,6 +1,7 @@
 import type { Psychologist } from './types';
 
 // Datos sintéticos: personas, licencias y enlaces de Meet inventados para desarrollo.
+// Con Supabase, el directorio se reemplaza por el del servidor al entrar (setPsychologists).
 export const PSYCHOLOGISTS: Psychologist[] = [
   {
     id: 'psi-valeria',
@@ -13,6 +14,7 @@ export const PSYCHOLOGISTS: Psychologist[] = [
     license: 'N.º 14.382',
     meetLink: 'https://meet.google.com/rpl-valr-ond',
     hours: [9, 15, 18],
+    sessionMinutes: 50,
   },
   {
     id: 'psi-andres',
@@ -25,6 +27,7 @@ export const PSYCHOLOGISTS: Psychologist[] = [
     license: 'N.º 9.117',
     meetLink: 'https://meet.google.com/rpl-andr-mej',
     hours: [10, 14, 19],
+    sessionMinutes: 50,
   },
   {
     id: 'psi-camila',
@@ -37,6 +40,7 @@ export const PSYCHOLOGISTS: Psychologist[] = [
     license: 'N.º 18.905',
     meetLink: 'https://meet.google.com/rpl-cami-fer',
     hours: [11, 16, 20],
+    sessionMinutes: 50,
   },
   {
     id: 'psi-luis',
@@ -49,8 +53,16 @@ export const PSYCHOLOGISTS: Psychologist[] = [
     license: 'N.º 6.540',
     meetLink: 'https://meet.google.com/rpl-luis-are',
     hours: [8, 13, 17],
+    sessionMinutes: 50,
   },
 ];
+
+// Las especialidades que se pueden elegir al solicitar la verificación.
+export const SPECIALTIES = [...new Set(PSYCHOLOGISTS.flatMap((p) => p.specialties))].sort();
+
+export function setPsychologists(list: Psychologist[]) {
+  PSYCHOLOGISTS.splice(0, PSYCHOLOGISTS.length, ...list);
+}
 
 export function findPsychologist(id: string | undefined) {
   return PSYCHOLOGISTS.find((p) => p.id === id) ?? null;

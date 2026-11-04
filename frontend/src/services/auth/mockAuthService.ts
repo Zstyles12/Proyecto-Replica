@@ -1,6 +1,15 @@
-import { MIN_PASSWORD, type AuthService } from './types';
+import { mockApproved } from '../professional/mockProfessionalService';
+import { MIN_PASSWORD, type AccountRole, type AuthService } from './types';
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Las cuentas de prueba del área profesional (docs/02-estructura.md, "Roles"). Las demás son 'user',
+// salvo las que el administrador simulado aprobó en este navegador.
+const TEST_ROLES: Record<string, AccountRole> = {
+  'admin@replica.test': 'admin',
+  'valeria@replica.test': 'psychologist',
+};
+const roleOf = (email: string): AccountRole => TEST_ROLES[email] ?? (mockApproved(email) ? 'psychologist' : 'user');
 
 // El nombre "guardado en el perfil" de una cuenta que ya existía: sale del correo
 // (manuel.goncalves@… → Manuel).
@@ -15,9 +24,9 @@ function profileName(email: string) {
 
 // Simulación mientras no existe Supabase: cualquier código de 6 dígitos entra, salvo 000000 que
 // simula un código equivocado; cualquier contraseña de 8 caracteres o más entra, salvo "equivocada"
-// que simula una contraseña incorrecta (para ver esos estados). Apple y Google devuelven una cuenta de
+// que simula una contraseña incorrecta (para ver esos estados). Google devuelve una cuenta de
 // prueba. Entrar con contraseña (o recuperarla) es una cuenta que ya existía, con su nombre en el
-// perfil; crearla con el código es una nueva; con Apple o Google decide lo que eligió la persona.
+// perfil; crearla con el código es una nueva; con Google decide lo que eligió la persona.
 export const mockAuthService: AuthService = {
   async signUp(_email, password) {
     await wait(900);
@@ -33,7 +42,7 @@ export const mockAuthService: AuthService = {
     const clean = email.trim().toLowerCase();
     return {
       ok: true,
-      account: { email: clean, provider: 'email', name: profileName(clean), existing: true },
+      account: { email: clean, provider: 'email', name: profileName(clean), existing: true, role: roleOf(clean) },
     };
   },
 
@@ -51,13 +60,15 @@ export const mockAuthService: AuthService = {
   async verifyCode(email, code) {
     await wait(800);
     if (code === '000000') return { ok: false, error: 'invalid-code' };
+    const clean = email.trim().toLowerCase();
     return {
       ok: true,
       account: {
-        email: email.trim().toLowerCase(),
+        email: clean,
         provider: 'email',
         name: null,
         existing: false,
+        role: roleOf(clean),
       },
     };
   },
@@ -67,10 +78,11 @@ export const mockAuthService: AuthService = {
     return {
       ok: true,
       account: {
-        email: provider === 'apple' ? 'ana.lucia@icloud.com' : 'ana.lucia@gmail.com',
+        email: 'ana.lucia@gmail.com',
         provider,
         name: 'Ana Lucía',
         existing: intent === 'entrar',
+        role: 'user',
       },
     };
   },
@@ -78,4 +90,12 @@ export const mockAuthService: AuthService = {
   async signOut() {
     await wait(200);
   },
+  async currentUserId() {
+    return null;
+  },
+  // La sesión simulada vive en el navegador (lib/session.ts).
+  async restore() {
+    return null;
+  },
+  onSignedOut() {},
 };

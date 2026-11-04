@@ -3,11 +3,12 @@ import { MoonStar, Sparkles } from "lucide-react";
 import { SettingRow, SettingsCard } from "./SettingsCard";
 import { Segmented } from "../../../components/ui/Segmented";
 import { ChoiceCard } from "../../auth/components/Choices";
+import { ReminderSettings } from "../../reminder/ReminderSettings";
 import { TONES, toneTitle } from "../tones";
 import { DAY_REPLY_HOURS, updateProfile, useProfile, type DayReplyHour } from "../store";
 
 // Tu réplica (features/profile/components/profile-settings.tsx de la app): el tono y a qué hora llega la
-// réplica del día. El recordatorio no está en la web hasta que existan las notificaciones (Web Push).
+// réplica del día, y el recordatorio diario (features/reminder).
 export const ReplySettings = React.forwardRef<HTMLDivElement, { expanded?: boolean }>(({ expanded }, ref) => {
   const profile = useProfile();
   return (
@@ -47,6 +48,7 @@ export const ReplySettings = React.forwardRef<HTMLDivElement, { expanded?: boole
           />
         }
       />
+      <ReminderSettings />
     </SettingsCard>
   );
 });

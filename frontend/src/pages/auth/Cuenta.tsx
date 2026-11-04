@@ -3,7 +3,6 @@ import { Navigate, useLocation, useNavigate, useSearchParams } from "react-route
 import { Eye, EyeOff, LoaderCircle, Mail } from "lucide-react";
 import { AuthScaffold } from "../../features/auth/components/AuthScaffold";
 import { CODE_LENGTH, CodeInput } from "../../features/auth/components/CodeInput";
-import { AppleIcon } from "../../components/common/AppleIcon";
 import { GoogleIcon } from "../../components/common/GoogleIcon";
 import { Button } from "../../components/ui/Button";
 import { authService, MIN_PASSWORD } from "../../services/auth";
@@ -16,9 +15,6 @@ import { sessionActions, TEST_TOOLS } from "../../lib/session";
 type Modo = "crear" | "entrar";
 type PasswordModo = "crear" | "entrar" | "nueva";
 type FlowState = { email?: string; modo?: PasswordModo | "recuperar" };
-
-// Apple solo aparece en sus dispositivos, como en la app (solo en iPhone).
-const IS_APPLE_DEVICE = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
 
 const inputClass =
   "h-14 w-full rounded-md border bg-surface px-4 text-[18px] text-foreground placeholder:text-subtle transition-colors focus:outline-none focus:ring-2 focus:ring-voice/40";
@@ -34,14 +30,14 @@ export const Entrar: React.FC = () => {
   const [params] = useSearchParams();
   const modo: Modo = params.get("modo") === "entrar" ? "entrar" : "crear";
   const returning = modo === "entrar";
-  const [pending, setPending] = useState<"apple" | "google" | null>(null);
+  const [pending, setPending] = useState(false);
   const [error, setError] = useState(false);
 
-  const withProvider = async (provider: "apple" | "google") => {
+  const withGoogle = async () => {
     setError(false);
-    setPending(provider);
-    const result = await authService.signInWithProvider(provider, returning ? "entrar" : "crear");
-    setPending(null);
+    setPending(true);
+    const result = await authService.signInWithProvider("google", returning ? "entrar" : "crear");
+    setPending(false);
     if (result.ok) sessionActions.signIn(result.account);
     else if (result.error !== "cancelled") setError(true);
   };
@@ -60,24 +56,13 @@ export const Entrar: React.FC = () => {
       }
     >
       <div className="space-y-3">
-        {IS_APPLE_DEVICE ? (
-          <button
-            type="button"
-            disabled={pending !== null}
-            onClick={() => withProvider("apple")}
-            className={`${providerClass} bg-foreground text-background`}
-          >
-            {pending === "apple" ? <LoaderCircle size={19} className="animate-spin" aria-hidden="true" /> : <AppleIcon className="h-[19px] w-[19px]" />}
-            Continuar con Apple
-          </button>
-        ) : null}
         <button
           type="button"
-          disabled={pending !== null}
-          onClick={() => withProvider("google")}
+          disabled={pending}
+          onClick={withGoogle}
           className={`${providerClass} border border-border bg-surface-raised text-foreground hover:bg-surface`}
         >
-          {pending === "google" ? <LoaderCircle size={19} className="animate-spin" aria-hidden="true" /> : <GoogleIcon className="h-[18px] w-[18px]" />}
+          {pending ? <LoaderCircle size={19} className="animate-spin" aria-hidden="true" /> : <GoogleIcon className="h-[18px] w-[18px]" />}
           Continuar con Google
         </button>
 
@@ -89,7 +74,7 @@ export const Entrar: React.FC = () => {
 
         <button
           type="button"
-          disabled={pending !== null}
+          disabled={pending}
           onClick={() => navigate("/correo", { state: { modo } })}
           className={`${providerClass} bg-muted text-foreground hover:bg-muted/80`}
         >
@@ -215,6 +200,11 @@ export const Contrasena: React.FC = () => {
       const result = await authService.signInWithPassword(email, password);
       setWorking(false);
       if (!result.ok) {
+        // Creó la cuenta y nunca confirmó el correo: se retoma donde quedó.
+        if (result.error === "unconfirmed" && (await authService.sendCode(email, "signup")).ok) {
+          navigate("/codigo", { state: { email, modo: "crear" } });
+          return;
+        }
         setError(
           result.error === "wrong-password"
             ? "Esa contraseña no coincide. Inténtalo otra vez o recupérala con un código."
@@ -245,7 +235,7 @@ export const Contrasena: React.FC = () => {
   const recover = async () => {
     if (recovering) return;
     setRecovering(true);
-    const result = await authService.sendCode(email);
+    const result = await authService.sendCode(email, "recovery");
     setRecovering(false);
     if (!result.ok) {
       setError("No pudimos enviar el código. Revisa tu conexión e inténtalo otra vez.");
@@ -360,7 +350,7 @@ export const Codigo: React.FC = () => {
     async (value: string) => {
       if (!email) return;
       setStatus("verifying");
-      const result = await authService.verifyCode(email, value);
+      const result = await authService.verifyCode(email, value, recovering ? "recovery" : "signup");
       if (result.ok) {
         if (recovering) {
           navigate("/contrasena", { replace: true, state: { email, modo: "nueva" } });
@@ -388,7 +378,7 @@ export const Codigo: React.FC = () => {
   const resend = async () => {
     setWait(RESEND_SECONDS);
     setResent(false);
-    const result = await authService.sendCode(email);
+    const result = await authService.sendCode(email, recovering ? "recovery" : "signup");
     if (result.ok) setResent(true);
   };
 

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ChevronRight, Lock, MoonStar } from "lucide-react";
 import { AnimatedHeart } from "../../../components/motion/AnimatedHeart";
 import { MoodChip } from "../../journal/components/MoodChip";
-import { isToday, noteRest, noteTitle, replyModeOf } from "../../journal/store";
+import { isToday, noteRest, noteTitle, replyModeOf, useWaiting } from "../../journal/store";
 import type { DayReply, Note } from "../../journal/types";
 import { noteFavorites, useIsFavoriteNote } from "../favorites";
 import { shortWhen, timeLabel } from "../../../lib/format";
@@ -40,6 +40,7 @@ export const FavoriteNoteButton: React.FC<{ noteId: string; size?: "sm" | "md" }
 export const NoteCard: React.FC<{ note: Note; showDay?: boolean }> = ({ note, showDay = false }) => {
   const title = noteTitle(note.text);
   const rest = noteRest(note.text);
+  const waiting = useWaiting(note.id);
   const when = showDay
     ? `${isToday(note.createdAt) ? "Hoy" : shortWhen(note.createdAt)} · ${timeLabel(note.createdAt)}`
     : timeLabel(note.createdAt);
@@ -78,6 +79,7 @@ export const NoteCard: React.FC<{ note: Note; showDay?: boolean }> = ({ note, sh
       ) : note.replyStatus === "streaming" ? (
         <p className="text-xs text-reply">Replica está leyendo tu nota…</p>
       ) : null}
+      {waiting ? <p className="text-[13px] text-muted-foreground">Se envía cuando vuelva la conexión.</p> : null}
     </article>
   );
 };

@@ -55,3 +55,20 @@ export function whenInSentence(iso: string) {
   if (label === "Ayer") return "ayer";
   return `el ${label.charAt(0).toLowerCase()}${label.slice(1)}`;
 }
+
+// El peso de un archivo, como lo dice una persona: "812 KB", "2,4 MB".
+export function fileSize(bytes: number) {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / 1024 / 1024).toLocaleString("es", { maximumFractionDigits: 1 })} MB`;
+}
+
+// La fecha sola, para registros y avisos: "3 de noviembre de 2026".
+export function dateLabel(iso: string) {
+  return new Date(iso).toLocaleDateString("es", { day: "numeric", month: "long", year: "numeric" });
+}
+
+// La fecha local de un instante, para un <input type="date"> ("2026-11-03").
+export function inputDate(date: Date) {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}

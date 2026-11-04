@@ -1,0 +1,22 @@
+# Configuración de la CLI de Supabase. Las claves nunca van aquí: supabase/README.md dice dónde van.
+project_id = "replica"
+
+# Cada función comprueba a quien llama en su propio código (_shared/server.ts): la revisión de la
+# plataforma no reconoce las claves nuevas de Supabase, y la llamada programada usa su propio secreto.
+[functions.generate-reply]
+verify_jwt = false
+
+[functions.generate-day-reply]
+verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = false
+
+[functions.chat-with-ai]
+verify_jwt = false
+
+[functions.set-role]
+verify_jwt = false
+
+[functions.send-reminders]
+verify_jwt = false

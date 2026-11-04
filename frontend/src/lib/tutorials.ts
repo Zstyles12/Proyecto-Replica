@@ -1,8 +1,10 @@
 import { useEffect, useSyncExternalStore, type RefObject } from "react";
+import { dataService } from "../services/data";
 import { readJSON, writeJSON } from "./storage";
 
 // Recorridos cortos la primera vez que se entra a cada pantalla: solo lo esencial, con "Saltar todo".
-// La misma lógica que la app (lib/tutorials.ts); aquí los pasos señalan elementos del DOM.
+// La misma lógica que la app (lib/tutorials.ts); aquí los pasos señalan elementos del DOM. Con Supabase
+// lo visto es de la cuenta; sin él, se guarda en el navegador.
 const KEY = "replica.tutorials";
 
 export type TutorialId = "inicio" | "primeraReplica" | "racha" | "notas" | "evolucion" | "chat" | "usuario";
@@ -16,15 +18,19 @@ export type TourStep = {
   before?: () => void;
 };
 
-type Saved = { seen: TutorialId[]; skipped: boolean };
+export type TutorialsSaved = { seen: TutorialId[]; skipped: boolean };
 type Active = { id: TutorialId; steps: TourStep[]; index: number } | null;
 
-let saved: Saved = readJSON<Saved>(KEY, () => ({ seen: [], skipped: false }));
+const EMPTY: TutorialsSaved = { seen: [], skipped: false };
+
+let saved: TutorialsSaved = dataService ? EMPTY : readJSON<TutorialsSaved>(KEY, () => EMPTY);
 let active: Active = null;
 const listeners = new Set<() => void>();
 
+// Si no llega al servidor, lo peor es ver un recorrido otra vez: no vale un aviso.
 function persist() {
-  writeJSON(KEY, saved);
+  if (dataService) dataService.saveTutorials(saved).catch(() => {});
+  else writeJSON(KEY, saved);
 }
 
 function emit() {
@@ -36,6 +42,13 @@ export function shouldShowTutorial(id: TutorialId) {
 }
 
 export const tutorials = {
+  // Lo que la cuenta ya vio, al entrar. Vacío al salir: la próxima cuenta no hereda nada.
+  hydrate(next: TutorialsSaved = EMPTY) {
+    saved = next;
+    active = null;
+    emit();
+  },
+
   // Empieza el recorrido de una pantalla si todavía no se vio (y no se saltaron todos).
   start(id: TutorialId, steps: TourStep[]) {
     const visible = steps.filter((s) => s.target.current);
@@ -82,7 +95,7 @@ export const tutorials = {
 
   // "Ver los tutoriales otra vez" (y al empezar con una cuenta nueva).
   reset() {
-    saved = { seen: [], skipped: false };
+    saved = EMPTY;
     persist();
     active = null;
     emit();

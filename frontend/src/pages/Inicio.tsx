@@ -27,6 +27,7 @@ import { promptForDate, type Mood } from "../features/journal/moods";
 import { firstName, useProfile } from "../features/profile/store";
 import { setPendingPrompt, usePendingPrompt } from "../lib/appState";
 import { capitalize } from "../lib/format";
+import { useRole } from "../lib/session";
 import { playSound } from "../lib/sounds";
 import { tutorials, useActiveTour, useCancelToursOnLeave } from "../lib/tutorials";
 
@@ -56,6 +57,7 @@ function streakTip(days: number) {
 export const Inicio: React.FC = () => {
   const navigate = useNavigate();
   const notes = useNotes();
+  const role = useRole();
   const { name, dayReplyHour } = useProfile();
   const now = useMemo(() => new Date(), []);
   const prompt = usePendingPrompt();
@@ -81,8 +83,8 @@ export const Inicio: React.FC = () => {
   const phrases = useMemo(() => phrasesForDay(now).map(phraseFromLibrary), [now]);
   const todays = useMemo(() => notesToday(notes), [notes]);
   // La primera nota del día (no privada) recibe su réplica al momento; las demás se leen juntas en
-  // la réplica del día.
-  const replyMode = nextReplyMode(notes, isPrivate);
+  // la réplica del día. La cuenta de demostración (el administrador) la recibe en cada nota.
+  const replyMode = nextReplyMode(notes, isPrivate, role === "admin");
   const toReadTonight = dayNotes(notes).length;
   const today = dayKey(now);
   const dayReply = useDayReply(today);

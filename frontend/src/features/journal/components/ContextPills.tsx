@@ -75,7 +75,7 @@ export const ContextPills: React.FC<ContextPillsProps> = ({
   };
 
   const pillClass = (active: boolean, open: boolean) =>
-    `inline-flex h-9 items-center gap-2 rounded-full border pl-3 pr-2.5 text-[13px] transition-all duration-small ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
+    `relative tap-area inline-flex h-9 items-center gap-2 rounded-full border pl-3 pr-2.5 text-[13px] transition-all duration-small ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
       active ? "font-medium text-foreground" : open ? "bg-surface text-foreground" : "text-muted-foreground hover:text-foreground"
     }`;
 
@@ -165,7 +165,7 @@ export const ContextPills: React.FC<ContextPillsProps> = ({
                   // Quitarlo deja el panel abierto: hace falta elegir uno.
                   if (next) advance(tag ? null : "tag");
                 }}
-                className={`inline-flex h-9 items-center gap-2 rounded-full border pl-2.5 pr-3.5 text-[13px] transition-all duration-small ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
+                className={`relative tap-area inline-flex h-9 items-center gap-2 rounded-full border pl-2.5 pr-3.5 text-[13px] transition-all duration-small ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
                   selected ? "font-medium text-foreground" : "bg-surface text-muted-foreground hover:text-foreground"
                 }`}
                 style={{
@@ -207,7 +207,7 @@ export const ContextPills: React.FC<ContextPillsProps> = ({
                   onTagChange(next);
                   if (next) advance(mood ? null : "mood");
                 }}
-                className={`inline-flex h-9 items-center rounded-full border px-3.5 text-[13px] transition-all duration-small ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
+                className={`relative tap-area inline-flex h-9 items-center rounded-full border px-3.5 text-[13px] transition-all duration-small ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
                   selected
                     ? "border-voice/50 bg-voice/10 font-medium text-voice"
                     : "border-border/70 text-muted-foreground hover:border-border hover:text-foreground"

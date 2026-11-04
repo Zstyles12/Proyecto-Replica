@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronRight, PenLine, Sprout } from "lucide-react";
 import { AiAura, Enter, WordReveal } from "../../../components/motion/Motion";
 import { Button } from "../../../components/ui/Button";
+import { HelpLink } from "../../../components/help/HelpLink";
 import { journal } from "../store";
 import type { Note } from "../types";
 import { setPendingPrompt } from "../../../lib/appState";
@@ -154,6 +155,8 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({ note, live, kind = "note",
           <QuotedBody text={body} />
         )
       ) : null}
+
+      {note.reply?.risk && !streaming ? <HelpLink /> : null}
 
       {headline ? <span aria-hidden="true" className="block h-1 w-12 rounded-full bg-voice-soft" /> : null}
 

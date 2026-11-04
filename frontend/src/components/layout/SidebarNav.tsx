@@ -1,41 +1,23 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import {
-  Feather,
-  NotebookText,
-  ChartSpline,
-  MessageCircle,
-  CircleUserRound,
-  Sun,
-  Moon,
-  Laptop,
-  Code2,
-} from "lucide-react";
+import { Sun, Moon, Laptop, Code2 } from "lucide-react";
 import { NAVIGATION_CONTENT, type NavItem } from "../../data/navigationContent";
 import { useTheme } from "../../hooks/useTheme";
 import { ReplicaWordmark } from "../brand/Logo";
-
-const ICON_MAP = {
-  Feather,
-  NotebookText,
-  ChartSpline,
-  MessageCircle,
-  CircleUserRound,
-};
+import { NAV_ICONS } from "./navIcons";
+import { CrisisButton } from "../help/CrisisButton";
 
 /**
  * Barra lateral para escritorio según Sección 6 de DESIGN.md:
  * - Fija a la izquierda (240 px de ancho).
- * - Misma estructura de 5 secciones que la app.
+ * - Misma estructura de 5 secciones que la app; el área profesional pasa las suyas y su rótulo.
  * - Indicador salvia activo de 2.5 px.
  * - Control de tema integrado al pie.
  */
-export const SidebarNav: React.FC = () => {
+export const SidebarNav: React.FC<{ sections: NavItem[]; areaLabel?: string }> = ({ sections, areaLabel }) => {
   const location = useLocation();
   const currentPath = location.pathname;
   const { theme, setTheme } = useTheme();
-
-  const sections = NAVIGATION_CONTENT.sections;
 
   return (
     <aside
@@ -46,6 +28,9 @@ export const SidebarNav: React.FC = () => {
       <div className="space-y-6">
         <div className="pl-1 pt-1">
           <ReplicaWordmark width={112} />
+          {areaLabel ? (
+            <p className="mt-3 text-[12px] font-semibold uppercase tracking-[0.8px] text-muted-foreground">{areaLabel}</p>
+          ) : null}
         </div>
 
         {/* Lista de enlaces */}
@@ -53,7 +38,7 @@ export const SidebarNav: React.FC = () => {
           {sections.map((item: NavItem) => {
             const isActive =
               item.path === "/" ? currentPath === "/" : currentPath.startsWith(item.path);
-            const IconComponent = ICON_MAP[item.iconName];
+            const IconComponent = NAV_ICONS[item.iconName];
 
             return (
               <Link
@@ -70,7 +55,7 @@ export const SidebarNav: React.FC = () => {
                 {isActive && (
                   <div className="absolute left-1.5 top-1/2 -translate-y-1/2 w-[2.5px] h-5 bg-voice rounded-full" />
                 )}
-                <IconComponent size={18} strokeWidth={2} className="shrink-0 ml-1" />
+                <IconComponent size={18} strokeWidth={2} className="shrink-0 ml-1" aria-hidden="true" />
                 <span>{item.label}</span>
               </Link>
             );
@@ -78,8 +63,9 @@ export const SidebarNav: React.FC = () => {
         </nav>
       </div>
 
-      {/* Pie de barra lateral: Tema y Playground */}
+      {/* Pie de barra lateral: Ayuda en crisis, Tema y Playground */}
       <div className="space-y-4 pt-4 border-t border-border/20">
+        <CrisisButton variant="sidebar" className="-mx-1" />
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>Tema</span>
           <div role="group" aria-label="Tema" className="inline-flex p-0.5 rounded-full bg-surface-sunken border border-border/30">

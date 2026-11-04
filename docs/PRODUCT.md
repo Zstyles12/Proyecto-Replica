@@ -28,7 +28,7 @@ La IA no conversa: responde a cada nota con una réplica pensada, como un buen i
 ## Operating Context
 
 - Navegación de 5 pestañas: **Inicio** (escribir; ánimo y tema necesarios; las dos frases del día; el cofre junto al saludo; una sola línea avisa cuándo llega o que llegó la réplica del día, nunca la réplica entera), **Notas** (todas las notas, con su réplica si la tienen, y la réplica de cada día como una entrada arriba de sus notas), **Evolución** (curva de ánimo, patrones, cofre de aprendizajes y tu tela), **Chat** (solo con el psicólogo, uno a la vez, nunca con la IA) y **Usuario** (perfil, métricas, favoritas, ajustes plegables, cuenta y apartado de psicólogo).
-- Registro: Apple, Google o correo y contraseña (un código de 6 dígitos confirma el correo al crear la cuenta y sirve para recuperar la contraseña), consentimiento explícito (18+, términos, IA que lee las notas) y una configuración corta. Recorridos breves la primera vez en cada pantalla.
+- Registro: Google o correo y contraseña (un código de 6 dígitos confirma el correo al crear la cuenta y sirve para recuperar la contraseña), consentimiento explícito (18+, términos, IA que lee las notas) y una configuración corta. Recorridos breves la primera vez en cada pantalla.
 - Sesiones de video por links de Google Meet, fuera de la app.
 - Uso privado e íntimo, muchas veces de noche.
 

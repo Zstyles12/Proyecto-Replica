@@ -1,25 +1,17 @@
 import { useSyncExternalStore } from "react";
+import { DEFAULT_REMINDER_TIME, dataService, type ProfilePatch } from "../../services/data";
 import { readJSON, writeJSON } from "../../lib/storage";
 
-// El perfil y los ajustes de la persona: uno solo para toda la web (datos simulados hasta que exista
-// Supabase). Igual que la app (features/profile/store.ts), sin el bloqueo ni el recordatorio, que
-// no están en la v1 web (DESIGN-WEB.md §6).
+// El perfil y los ajustes de la persona. Con Supabase viven en su cuenta; sin él, en el navegador. La
+// solicitud de psicólogo tiene su propio servicio (services/professional).
+// Igual que la app (features/profile/store.ts). El bloqueo vive aparte, solo en este navegador
+// (lib/lock.ts).
 const KEY = "replica.profile.v2";
 
 export type ReplyTone = "suave" | "profundo" | "directo";
 // A qué hora llega la réplica del día.
 export type DayReplyHour = 20 | 22;
 export const DAY_REPLY_HOURS: DayReplyHour[] = [20, 22];
-
-export type PsychologistApplication = {
-  status: "none" | "review" | "verified";
-  fullName: string;
-  license: string;
-  specialties: string[];
-  meetLink: string;
-  bio: string;
-  submittedAt: string | null;
-};
 
 export type Profile = {
   name: string;
@@ -30,7 +22,10 @@ export type Profile = {
   memberSince: string;
   replyTone: ReplyTone;
   dayReplyHour: DayReplyHour;
-  psychologist: PsychologistApplication;
+  // El recordatorio diario (RF-53), de la cuenta. Lo enciende y lo apaga features/reminder.
+  reminderEnabled: boolean;
+  // "HH:MM", en hora local.
+  reminderTime: string;
 };
 
 function initial(): Profile {
@@ -41,19 +36,14 @@ function initial(): Profile {
     memberSince: new Date().toISOString(),
     replyTone: "suave",
     dayReplyHour: 22,
-    psychologist: {
-      status: "none",
-      fullName: "",
-      license: "",
-      specialties: [],
-      meetLink: "",
-      bio: "",
-      submittedAt: null,
-    },
+    reminderEnabled: false,
+    reminderTime: DEFAULT_REMINDER_TIME,
   };
 }
 
-let profile: Profile = { ...initial(), ...readJSON<Partial<Profile>>(KEY, () => ({})) };
+// Con Supabase no se guarda nada aquí. La solicitud que guardaban las versiones anteriores se ignora.
+const { psychologist: _old, ...saved } = dataService ? {} : readJSON<Partial<Profile> & { psychologist?: unknown }>(KEY, () => ({}));
+let profile: Profile = { ...initial(), ...saved };
 const listeners = new Set<() => void>();
 
 function subscribe(listener: () => void) {
@@ -63,15 +53,37 @@ function subscribe(listener: () => void) {
   };
 }
 
-export function updateProfile(patch: Partial<Profile>) {
+function apply(patch: Partial<Profile>) {
   profile = { ...profile, ...patch };
-  writeJSON(KEY, profile);
+  if (!dataService) writeJSON(KEY, profile);
   listeners.forEach((l) => l());
 }
 
-// Al eliminar la cuenta: vuelve al perfil vacío.
+export function updateProfile(patch: Partial<Profile>) {
+  const previous = profile;
+  apply(patch);
+  if (!dataService) return;
+  // El recordatorio tiene su propio camino (features/reminder), con la suscripción del navegador.
+  const { photo, memberSince: _memberSince, reminderEnabled: _enabled, reminderTime: _time, ...fields } = patch;
+  const server: ProfilePatch = fields;
+  if (Object.keys(server).length) dataService.saveProfile(server).catch(() => apply(previous));
+  // Mientras sube se ve la foto recién elegida; después, la del servidor.
+  if (photo !== undefined) {
+    dataService.savePhoto(photo).then(
+      (url) => apply({ photo: url }),
+      () => apply({ photo: previous.photo })
+    );
+  }
+}
+
+// Lo que hay en el servidor, al entrar.
+export function hydrateProfile(data: Profile) {
+  apply(data);
+}
+
+// Al eliminar la cuenta o cerrar sesión con Supabase: vuelve al perfil vacío.
 export function resetProfile() {
-  updateProfile(initial());
+  apply(initial());
 }
 
 export function useProfile() {

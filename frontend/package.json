@@ -8,11 +8,17 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "marca": "node scripts/marca.mjs"
+    "cuentas": "node --env-file=../supabase/.env scripts/cuentas-de-prueba.mjs",
+    "accesos": "node --env-file=../supabase/.env scripts/comprobar-accesos.mjs",
+    "flujo": "node --env-file=../supabase/.env scripts/comprobar-flujo.mjs",
+    "demo": "node --env-file=../supabase/.env scripts/datos-de-demostracion.mjs",
+    "programada": "node --env-file=../supabase/.env scripts/comprobar-programada.mjs"
   },
   "dependencies": {
     "@fontsource/alegreya": "^5.3.0",
     "@fontsource/alegreya-sans": "^5.3.0",
+    "@supabase/supabase-js": "^2.118.0",
+    "jspdf": "^4.2.1",
     "lucide-react": "^1.48.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

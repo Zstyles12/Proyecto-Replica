@@ -20,7 +20,7 @@ import { playSound } from "../../lib/sounds";
 // Lo que Replica hace con lo que escribes, dicho sin letra pequeña. Nada que no se pueda cumplir.
 const PROMISES: { icon: LucideIcon; text: string }[] = [
   { icon: LockKeyhole, text: "Tu diario es privado. No lo vendemos ni lo usamos para publicidad." },
-  { icon: Sparkles, text: "Una IA lee cada nota para escribirte la réplica. Solo la usa para responderte." },
+  { icon: Sparkles, text: "Una IA lee cada nota que no es privada para escribirte la réplica. Solo la usa para responderte." },
   {
     icon: UsersRound,
     text: "Un psicólogo solo lo lee si tú se lo compartes, y puedes retirar el permiso cuando quieras.",

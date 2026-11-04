@@ -34,7 +34,7 @@ export function Segmented<T extends string | number>({
             role="radio"
             aria-checked={selected}
             onClick={() => onChange(o.value)}
-            className={`relative min-h-9 flex-1 rounded-full px-3.5 text-[13px] font-medium transition-colors duration-small focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
+            className={`tap-area relative min-h-9 flex-1 rounded-full px-3.5 text-[13px] font-medium transition-colors duration-small focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
               selected ? "text-foreground" : "text-muted-foreground hover:text-foreground"
             }`}
           >

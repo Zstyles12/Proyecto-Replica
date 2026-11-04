@@ -5,14 +5,14 @@ import { PageHeader } from "../components/layout/PageHeader";
 import { Avatar } from "../features/care/components/CareParts";
 import { PSYCHOLOGISTS } from "../features/care/data";
 
-const SPECIALTIES = [...new Set(PSYCHOLOGISTS.flatMap((p) => p.specialties))].sort();
 
 // El directorio de psicólogos (app/(tabs)/chat/directorio.tsx): todos con su licencia verificada, con
 // un filtro por especialidad. Cada uno abre su perfil.
 export const Directorio: React.FC = () => {
   const [active, setActive] = useState("all");
   const list = active === "all" ? PSYCHOLOGISTS : PSYCHOLOGISTS.filter((p) => p.specialties.includes(active));
-  const options = [{ key: "all", label: "Todos" }, ...SPECIALTIES.map((s) => ({ key: s, label: s }))];
+  const specialties = [...new Set(PSYCHOLOGISTS.flatMap((p) => p.specialties))].sort();
+  const options = [{ key: "all", label: "Todos" }, ...specialties.map((s) => ({ key: s, label: s }))];
 
   return (
     <div className="mx-auto max-w-[680px] space-y-4 lg:mx-0">
@@ -29,7 +29,7 @@ export const Directorio: React.FC = () => {
               role="radio"
               aria-checked={selected}
               onClick={() => setActive(o.key)}
-              className={`inline-flex h-9 items-center rounded-full border px-3.5 text-[13px] font-medium transition-colors duration-small focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
+              className={`relative tap-area inline-flex h-9 items-center rounded-full border px-3.5 text-[13px] font-medium transition-colors duration-small focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice ${
                 selected ? "border-voice bg-voice text-voice-foreground" : "border-border/70 text-muted-foreground hover:text-foreground"
               }`}
             >

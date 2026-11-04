@@ -4,40 +4,31 @@ Instrucciones para cualquier agente que trabaje en este repositorio. Léelas ant
 
 ## Qué es
 
-Replica es un diario personal donde la IA responde con una **réplica**, más un canal con psicólogos verificados. Hay una **app móvil** (terminada en diseño y funcionamiento) y esta **web**. Es un solo producto, pero la web tiene sus propias interfaces, pensadas para que sea agradable en un navegador, tanto en el teléfono como en la computadora.
+Replica es un diario personal donde la IA responde con una **réplica**, más un canal con psicólogos verificados. Es una **web** pensada para que sea agradable en un navegador, tanto en el teléfono como en la computadora, y se entrega completa el **jueves 5 de noviembre de 2026**.
 
-**Qué se comparte y qué decide la web:**
-
-- **Se comparte con la app** (mandan sus documentos): las reglas de producto, la voz y el vocabulario, los colores, la tipografía, la marca (`docs/marca` de la app), los sonidos y el esquema de datos.
-- **Decide la web** (manda `docs/DESIGN-WEB.md`): cómo se organiza cada pantalla, la navegación, la composición de las piezas, las interacciones con ratón y teclado, el comportamiento en cada ancho y cómo se aplica la marca en el navegador.
-- **Primero se mira la app.** Si su solución sirve en el navegador, se adapta. Si la web necesita otro camino para verse o usarse mejor, se diseña uno propio, se anota en `DESIGN-WEB.md` y se aprueba antes de implementar. Lo mismo con los textos: se copian de la app cuando sirven, y se escriben nuevos (con la voz de Replica) cuando la interfaz web lo necesita.
+La app móvil se descontinuó el 31 de octubre de 2026. La web es dueña de sus reglas, su diseño, sus datos y su backend: los decide y los edita aquí.
 
 ## Fuentes de verdad, en este orden
 
-1. `docs/DESIGN.md`: sistema de diseño completo (colores, tipografía, movimiento, voz, piezas, pantallas y reglas de producto). **Copia exacta** del de la app: no se edita aquí; si la app lo cambia, se vuelve a copiar.
+1. `docs/DESIGN.md`: sistema de diseño completo (colores, tipografía, movimiento, voz, piezas, pantallas y reglas de producto).
 2. `docs/DESIGN-WEB.md`: el diseño de las interfaces de la web (pantallas, navegación, anchos, marca en el navegador). Donde contradice a `DESIGN.md` en interfaz, manda este; en producto, voz, colores y marca, manda `DESIGN.md`.
-3. `docs/PRODUCT.md`: contexto de producto (copia exacta del de la app).
+3. `docs/PRODUCT.md`: contexto de producto.
 4. `docs/02-estructura.md`: stack de la web, rutas, registro y estructura de carpetas.
-5. `docs/03-base-de-datos.md`: esquema compartido de Supabase. La web no define su propio esquema.
+5. `docs/03-base-de-datos.md`: esquema de Supabase, reglas de acceso y funciones de servidor.
 6. `docs/04-plan.md`: plan de trabajo y estado real de cada fase.
 7. `docs/01-resumen.md`: qué es Replica y sus principios.
 
+**El alcance** lo fija la especificación de la Evaluación 3: 11 módulos, 61 requisitos funcionales y 15 no funcionales, en `entrega-evaluacion-3/fuentes/datos.mjs`. Si otro documento dice que algo queda fuera, manda la especificación. En el área profesional, `DESIGN-WEB.md` §10 es más nuevo y manda sobre ella. Las reglas de seguridad salen del plan de `entrega-evaluacion-4/plan-seguridad/`.
+
 Si un pedido contradice estos documentos, dilo antes de implementar.
 
-## La app de referencia
+## La app antigua
 
-- Vive en `../replica mobile/zairo` (repo `github.com/ManuelGoncalvesR/zairo`).
-- **Solo se lee para comparar. Nunca se modifica nada en ella, ni siquiera su `.git`.**
-- Ante una duda de producto, de voz o de marca, manda la app. En interfaz, es el punto de partida, no una obligación. Dónde mirar:
-  - Pantallas: `app/` (por ejemplo `app/(tabs)/index.tsx` es Inicio).
-  - Lógica: `lib/session.ts` (etapas del registro), `features/journal/store.ts` y `features/journal/day-replies.ts` (notas y réplicas), `features/care/store.ts` (chat), `features/cofre/` (frases), `features/profile/` (perfil, métricas y ajustes), `lib/tutorials.ts` (recorridos).
-  - Servicios simulados: `services/auth/`, `services/ai/`.
-  - Marca: `docs/marca` (manual, kit con logos, íconos, animaciones y sonidos) y `components/brand/logo-geometry.ts` (la geometría, generada por el kit). La web copia lo que usa con `npm run marca` (ver `frontend/scripts/marca.mjs`); nunca dibuja el logo a mano.
-  - Es TypeScript; la lógica que no depende de React Native se puede traducir casi tal cual.
+Quedó en `../replica mobile/zairo/zairo` y no manda en nada. Se puede leer si ayuda a ver cómo se resolvió algo, sin modificar nada en ella, ni siquiera su `.git` (para usar git allí, antepón `GIT_OPTIONAL_LOCKS=0`). Donde los documentos todavía digan "igual que la app", describen el comportamiento vigente.
 
 ## Comandos
 
-Todo se corre dentro de `frontend/`:
+En `frontend/`:
 
 ```bash
 npm install                              # dependencias
@@ -47,27 +38,36 @@ npm run lint                             # oxlint
 npm run build                            # tipos + build de producción
 ```
 
+En la raíz del repositorio, para el backend (no hay Docker: se trabaja contra el proyecto remoto):
+
+```bash
+npx supabase db push                     # aplica las migraciones de supabase/migrations
+npx supabase functions deploy            # publica las funciones de servidor
+```
+
 ## Reglas de producto que nunca se rompen
 
 - **Nombre:** "Replica", sin tilde. Solo la respuesta de la IA es "réplica".
-- **Una réplica al momento por día:** solo la primera nota no privada del día la recibe ("Replica"); las demás se guardan ("Guardar") y las lee la réplica del día, que deja un comentario a cada una. A medianoche, una última réplica si se escribió después.
+- **Una réplica al momento por día:** solo la primera nota no privada del día la recibe ("Replica"); las demás se guardan ("Guardar") y las lee la réplica del día, que deja un comentario a cada una. A medianoche, una última réplica si se escribió después. La única excepción es la cuenta de demostración (el administrador), descrita en `DESIGN.md`.
 - **Notas privadas:** no las lee la IA ni el psicólogo, nunca.
 - **Ánimo y tema son necesarios** para guardar; si faltan, Replica los pregunta con su voz, nunca como error.
 - **Solo métricas reales**, calculadas de lo que la persona escribió o eligió. Nada de valores fijos ni inventados.
 - **Sin contadores que pidan atención:** ningún número como insignia ("Favoritas · 5"). Los números solo donde son el dato.
-- **Honestidad:** no prometer lo que no existe (cifrado, bloqueo, notificaciones, exportar). Un interruptor que no hace nada es una promesa falsa.
+- **Honestidad:** una función aparece en la interfaz cuando funciona de verdad; si no llega al jueves, se oculta. Un interruptor que no hace nada es una promesa falsa. El bloqueo protege el acceso desde ese navegador y nunca se presenta como cifrado.
 - **Compartir el diario** es explícito y revocable, y siempre explica qué significa antes de activarse.
-- **Fuera de la v1 web:** chat con la IA, pantalla de crisis, exportar notas, pagos, planes, videollamadas propias, bloqueo del diario y compartir una nota suelta en el chat.
+- **Ayuda en crisis:** cada línea de atención publicada tiene una fuente oficial comprobada. Nunca se inventa ni se deduce un número.
+- **La IA no diagnostica ni da indicaciones clínicas.** Si una nota o un mensaje muestra riesgo, no da consejos, responde con calidez, sugiere ayuda profesional y enlaza a la ayuda en crisis.
+- **Fuera del proyecto:** pagos, planes y videollamadas propias.
 
 ## Voz y textos
 
 - Español neutro, trato de tú, frases cortas, sin culpa ni presión. Nunca clínico ni gamificado.
 - Usa el vocabulario de `DESIGN.md` §9 (réplica, réplica del día, última réplica, notas de tu día, cofre, destilado por Replica, tela, hoja, nota privada).
-- **Copia los textos de la app** cuando sirven para la pantalla web. Escribe textos nuevos solo cuando la interfaz web es distinta y lo necesita, con la misma voz.
-- Los textos van donde los tiene la app: junto a la pantalla o la pieza que los usa (así se comparan línea por línea con la app). Los que comparten varias pantallas o son contenido largo van en `frontend/src/data/` (textos legales, bienvenida, navegación).
+- Los textos nuevos llevan la misma voz que los que ya existen; búscalos antes de escribir uno parecido.
+- Los textos van junto a la pantalla o la pieza que los usa. Los que comparten varias pantallas o son contenido largo van en `frontend/src/data/` (textos legales, bienvenida, navegación).
 - Nunca se muestra al usuario texto técnico (nombres de archivos, versiones, valores como "0.55", nombres de modelos).
 - Sin emojis en la interfaz: los íconos son de Lucide o los dibujos propios de la marca.
-- Errores y avisos nunca en rojo: los avisos amables van en la voz de Replica (malva, itálica) y los fallos reales en `emotion`. `destructive` es solo para borrar algo.
+- Errores y avisos nunca en rojo: los avisos amables van en la voz de Replica (malva, itálica) y los fallos reales en `emotion`. `destructive` es solo para borrar algo y, en el área profesional, para las acciones irreversibles (rechazar una verificación, dejar de atender a un paciente).
 - El malva (`reply`) es exclusivo de lo que dice la IA.
 
 ## Convenciones de código
@@ -75,9 +75,10 @@ npm run build                            # tipos + build de producción
 - TypeScript estricto, sin `any`. Componentes de React con funciones y hooks.
 - Colores **solo** con los tokens (`bg-voice`, `border-border/40`, `var(--voice)`); nunca hexadecimales sueltos en los componentes. Si agregas una clase con opacidad sobre un token, comprueba que Tailwind la genera (`DESIGN-WEB.md` §7).
 - Duraciones y curvas con los tokens de movimiento (`duration-press`, `ease-out`…). Todo respeta `prefers-reduced-motion`.
-- Estado compartido en stores pequeños con `useSyncExternalStore` (como la app), no en `useState` duplicados por componente.
+- Estado compartido en stores pequeños con `useSyncExternalStore`, no en `useState` duplicados por componente.
 - Los días se calculan en **hora local** (`dayKey`), nunca con `toISOString().slice(0, 10)`.
-- Los servicios simulados (`services/`) tienen el mismo contrato que tendrán con Supabase.
+- Las pantallas hablan con `services/`, nunca con Supabase directamente. Cada servicio tiene su versión real y la simulada con el mismo contrato; sin variables de entorno, la web usa la simulada.
+- El logo sale de `components/brand/logoGeometry.ts`; nunca se dibuja a mano.
 - Ventanas y hojas con la pieza común (portal, `Escape`, foco atrapado): nunca `window.confirm` ni `alert`.
 - Reutiliza componentes existentes con props opcionales antes de crear uno paralelo.
 
@@ -94,18 +95,22 @@ npm run build                            # tipos + build de producción
 1. `npx tsc -p tsconfig.app.json --noEmit`, `npm run lint` y `npm run build` sin errores.
 2. Revisión visual en anchos exactos: 375, 767, 768, 1023, 1024 y 1440, en claro y en oscuro.
 3. Recorrido con teclado de lo que cambió.
-4. Comparación con la misma pantalla de la app: mismas reglas de producto y misma voz. Si la interfaz es distinta, que la diferencia esté anotada en `DESIGN-WEB.md`.
+4. Comparación con el requisito de la especificación y con `DESIGN-WEB.md`: mismas reglas de producto y misma voz.
 
 ## Forma de trabajo
 
-1. Para cada pantalla o cambio grande: primero un plan (qué se reutiliza, qué es nuevo, estado, rutas, accesibilidad, qué tabla de `03-base-de-datos.md` representa) y **esperar aprobación** antes de implementar.
-2. Implementar en pasos chicos y verificables.
-3. Revisar el propio trabajo contra el plan aprobado.
+**Hasta la entrega del jueves:** las fases de `docs/04-plan.md` están aprobadas. Se avanza de una a la siguiente con un plan corto, y se para a preguntar solo ante una decisión de producto nueva, algo que salga de lo documentado o un paso que solo pueda hacer la persona responsable.
+
+1. Implementar en pasos chicos y verificables.
+2. Toda interfaz nueva se anota en `DESIGN-WEB.md` antes de construirla.
+3. Revisar el propio trabajo contra el plan y los requisitos.
 4. La persona responsable verifica a mano antes de cada commit. Los commits van en español y dicen qué cambió y por qué.
 5. Al terminar una fase, marcarla en `docs/04-plan.md`.
 
 ## Seguridad
 
-- Nunca credenciales reales en el código ni en los prompts: siempre variables de entorno.
-- La web nunca llama a Gemini directamente: las réplicas salen de las Edge Functions compartidas.
-- El MCP de Supabase, en solo lectura mientras no haya backend real.
+- Nunca credenciales reales en el código ni en los prompts: siempre variables de entorno. Las claves las pone la persona responsable en `frontend/.env.local` y en los secretos de Supabase; nunca pasan por el chat.
+- La web nunca llama a Gemini directamente: las réplicas y el chat con la IA salen de las Edge Functions.
+- `service_role` solo en el servidor. Los roles van en `app_metadata`, nunca en `user_metadata`.
+- RLS en el 100 % de las tablas. Lo que la persona no autorizó se filtra en el servidor, no en la pantalla.
+- El proyecto es universitario: Supabase en plan gratuito y solo datos de prueba, nunca de personas reales.

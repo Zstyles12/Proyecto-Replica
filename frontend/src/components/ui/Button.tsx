@@ -31,7 +31,8 @@ export const Button: React.FC<ButtonProps> = ({
     "inline-flex items-center justify-center font-sans font-semibold rounded-full select-none cursor-pointer transition-all duration-small ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100";
 
   const sizeClasses = {
-    sm: "h-[36px] px-4 text-xs gap-1.5 min-w-[36px]",
+    // Se dibuja a 36 px, pero se toca en 44 (tap-area).
+    sm: "relative tap-area h-[36px] px-4 text-xs gap-1.5 min-w-[36px]",
     normal: "h-[44px] px-6 text-[15px] gap-2 min-w-[44px]",
     lg: "h-[48px] px-7 text-base gap-2.5 min-w-[48px]",
   }[size];

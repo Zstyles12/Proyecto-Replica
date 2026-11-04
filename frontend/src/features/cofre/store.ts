@@ -1,6 +1,7 @@
 import { findLibraryPhrase, type LibraryPhrase } from './library';
 import { useLearnings } from '../journal/store';
 import type { Learning } from '../journal/types';
+import { dataService } from '../../services/data';
 import { readString, writeString } from '../../lib/storage';
 import * as React from 'react';
 import { useSyncExternalStore } from 'react';
@@ -52,6 +53,7 @@ function seed(): Saved[] {
 }
 
 function load(): Saved[] {
+  if (dataService) return [];
   const raw = readString(KEY);
   if (raw) {
     try {
@@ -83,20 +85,31 @@ function subscribe(listener: () => void) {
   return () => listeners.delete(listener);
 }
 
+function apply(next: Saved[]) {
+  saved = next;
+  keys = saved.map((s) => s.key);
+  if (!dataService) writeString(KEY, JSON.stringify(saved));
+  listeners.forEach((l) => l());
+}
+
 export const favorites = {
   clear() {
-    saved = [];
-    keys = [];
-    writeString(KEY, JSON.stringify(saved));
-    listeners.forEach((l) => l());
+    apply([]);
+  },
+  hydrate(list: Saved[]) {
+    apply(list);
+  },
+  // La réplica de una nota borrada sale del cofre. En el servidor se fue con la nota.
+  forget(key: string) {
+    if (keys.includes(key)) apply(saved.filter((s) => s.key !== key));
   },
   toggle(key: string) {
-    saved = keys.includes(key)
-      ? saved.filter((s) => s.key !== key)
-      : [{ key, savedAt: new Date().toISOString() }, ...saved];
-    keys = saved.map((s) => s.key);
-    writeString(KEY, JSON.stringify(saved));
-    listeners.forEach((l) => l());
+    const previous = saved;
+    const adding = !keys.includes(key);
+    const savedAt = new Date().toISOString();
+    apply(adding ? [{ key, savedAt }, ...saved] : saved.filter((s) => s.key !== key));
+    // Si no llega al servidor, la frase vuelve a como estaba: el corazón no promete lo que no pasó.
+    dataService?.setPhraseSaved(key, adding, savedAt).catch(() => apply(previous));
   },
 };
 

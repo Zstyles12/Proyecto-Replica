@@ -6,7 +6,6 @@ import { sessionActions, useAccount } from "../../../lib/session";
 import type { AuthProvider } from "../../../services/auth";
 
 const PROVIDER: Record<AuthProvider, string> = {
-  apple: "Entraste con Apple",
   google: "Entraste con Google",
   email: "Entraste con tu correo",
 };
@@ -16,7 +15,13 @@ const PROVIDER: Record<AuthProvider, string> = {
 export const AccountCard: React.FC = () => {
   const account = useAccount();
   const [confirm, setConfirm] = useState<"logout" | "delete" | null>(null);
+  const [failed, setFailed] = useState(false);
   if (!account) return null;
+
+  const remove = async () => {
+    setFailed(false);
+    if (!(await sessionActions.deleteAccount())) setFailed(true);
+  };
 
   return (
     <div className="space-y-0.5 rounded-lg border border-border/40 bg-surface-raised p-2 shadow-raised dark:shadow-none">
@@ -31,6 +36,11 @@ export const AccountCard: React.FC = () => {
       </div>
       <LinkRow icon={LogOut} title="Cerrar sesión" onClick={() => setConfirm("logout")} />
       <LinkRow icon={Trash2} tint="emotion" title="Eliminar mi cuenta" onClick={() => setConfirm("delete")} />
+      {failed ? (
+        <p role="alert" className="px-3 pb-2 text-[13px] text-emotion">
+          No pudimos eliminar tu cuenta. Revisa tu conexión e inténtalo otra vez.
+        </p>
+      ) : null}
 
       <ConfirmDialog
         open={confirm === "logout"}
@@ -43,7 +53,7 @@ export const AccountCard: React.FC = () => {
       <ConfirmDialog
         open={confirm === "delete"}
         onClose={() => setConfirm(null)}
-        onConfirm={() => sessionActions.deleteAccount()}
+        onConfirm={remove}
         title="¿Eliminar tu cuenta?"
         description="Se borran tu diario, tus réplicas, tus frases guardadas y tus conversaciones. No se puede deshacer."
         confirmLabel="Eliminar"

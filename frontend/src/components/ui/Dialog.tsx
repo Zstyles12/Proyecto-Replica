@@ -22,6 +22,11 @@ export interface DialogProps {
   footer?: React.ReactNode;
   size?: DialogSize;
   closeLabel?: string;
+  /**
+   * `side`: el panel lateral del área profesional (DESIGN-WEB.md §10). En el teléfono, una hoja a
+   * pantalla completa; desde 768 px, pegado a la derecha y a toda la altura (hasta 440 px).
+   */
+  variant?: "center" | "side";
 }
 
 const WIDTHS: Record<DialogSize, string> = {
@@ -46,7 +51,9 @@ export const Dialog: React.FC<DialogProps> = ({
   footer,
   size = "md",
   closeLabel = "Cerrar",
+  variant = "center",
 }) => {
+  const side = variant === "side";
   const titleId = useId();
   const descriptionId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -103,8 +110,9 @@ export const Dialog: React.FC<DialogProps> = ({
 
   return createPortal(
     <div
-      className="dialog-root fixed inset-0 z-[60] flex items-end justify-center md:items-center md:p-6"
+      className={`dialog-root fixed inset-0 z-[60] flex ${side ? "justify-end" : "items-end justify-center md:items-center md:p-6"}`}
       data-state={closing ? "closed" : "open"}
+      data-variant={variant}
     >
       <div
         aria-hidden="true"
@@ -118,7 +126,11 @@ export const Dialog: React.FC<DialogProps> = ({
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
-        className={`dialog-panel relative flex w-full max-h-[88vh] flex-col rounded-t-xl border border-border/40 bg-surface-raised shadow-raised focus:outline-none dark:shadow-none md:max-h-[85vh] md:rounded-lg ${WIDTHS[size]}`}
+        className={`dialog-panel relative flex w-full flex-col border-border/40 bg-surface-raised shadow-raised focus:outline-none dark:shadow-none ${
+          side
+            ? "h-[100dvh] md:max-w-[27.5rem] md:border-l"
+            : `max-h-[88vh] rounded-t-xl border md:max-h-[85vh] md:rounded-lg ${WIDTHS[size]}`
+        }`}
       >
         <header className="flex items-start justify-between gap-4 px-6 pb-3 pt-6">
           <div className="min-w-0 space-y-1">
@@ -141,7 +153,7 @@ export const Dialog: React.FC<DialogProps> = ({
           </button>
         </header>
 
-        {children ? <div className="min-h-0 overflow-y-auto px-6 pb-6">{children}</div> : null}
+        {children ? <div className={`min-h-0 overflow-y-auto px-6 pb-6 ${side ? "flex-1" : ""}`}>{children}</div> : null}
 
         {footer ? (
           <footer className="flex flex-wrap items-center justify-end gap-2.5 border-t border-border/30 px-6 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4">

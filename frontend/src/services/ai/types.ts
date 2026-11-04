@@ -25,6 +25,9 @@ export type ReplyContent = {
   body: string;
   questions: string[];
   learning: string;
+  // Lo escrito muestra riesgo: debajo del análisis se enlaza a la ayuda en crisis (RF-61). Lo decide
+  // el servidor, y nunca es un diagnóstico.
+  risk?: boolean;
   // Solo en la réplica del día: un comentario corto y distinto para cada nota que leyó. Se ve en el
   // detalle de esa nota, así ninguna queda vacía y la réplica completa no se repite en cada una.
   comments?: { noteId: string; text: string }[];

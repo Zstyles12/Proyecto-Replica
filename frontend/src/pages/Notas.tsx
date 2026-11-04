@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Feather, NotebookText } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { Enter } from "../components/motion/Motion";
 import { NotesHeader } from "../features/notes/components/NotesHeader";
+import { ExportDialog } from "../features/notes/components/ExportDialog";
 import { FilterBar } from "../features/notes/components/FilterBar";
 import { MonthCalendar } from "../features/notes/components/MonthCalendar";
 import { DayReplyEntry, NoteCard } from "../features/notes/components/NoteCard";
@@ -35,10 +36,18 @@ function toGroups(notes: Note[], replies: Record<string, DayReply> | null): Grou
 export const Notas: React.FC = () => {
   const notes = useNotes();
   const favoriteIds = useFavoriteNoteIds();
+  // Se llega aquí después de borrar una nota desde su detalle.
+  const deleted = (useLocation().state as { deleted?: boolean } | null)?.deleted === true;
+  const deletedNotice = deleted ? (
+    <p role="status" className="text-[13px] text-muted-foreground">
+      Borraste la nota.
+    </p>
+  ) : null;
   const dayReplies = useAllDayReplies();
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [filter, setFilter] = useState<NoteFilter>(NO_FILTER);
+  const [exporting, setExporting] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
 
   const values = useMemo(() => filterValues(notes), [notes]);
@@ -93,6 +102,7 @@ export const Notas: React.FC = () => {
     return (
       <div className="mx-auto max-w-[680px] space-y-8 lg:mx-0">
         <h1 className="font-replica text-[28px] font-normal leading-[34px] tracking-[-0.3px] text-foreground">Notas</h1>
+        {deletedNotice}
         <div className="space-y-3 rounded-lg bg-surface-sunken px-8 py-12 text-center">
           <NotebookText size={28} className="mx-auto text-voice" aria-hidden="true" />
           <h2 className="font-replica text-xl font-medium text-foreground">Todavía no hay notas</h2>
@@ -113,7 +123,15 @@ export const Notas: React.FC = () => {
   return (
     <div className="lg:grid lg:grid-cols-[1fr_300px] lg:items-start lg:gap-10">
       <div className="mx-auto min-w-0 max-w-[680px] space-y-3 lg:mx-0">
-        <NotesHeader query={query} onQueryChange={setQuery} searching={searching} onSearchingChange={setSearching} />
+        <NotesHeader
+          query={query}
+          onQueryChange={setQuery}
+          searching={searching}
+          onSearchingChange={setSearching}
+          onExport={() => setExporting(true)}
+        />
+        {deletedNotice}
+        <ExportDialog open={exporting} onClose={() => setExporting(false)} />
         <FilterBar ref={filterRef} filter={filter} onChange={setFilter} moods={values.moods} tags={values.tags} />
 
         {groups.length === 0 ? (

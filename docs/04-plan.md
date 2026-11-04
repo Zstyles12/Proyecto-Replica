@@ -1,12 +1,16 @@
 # Plan de trabajo — Web
 
-> La web se construye primero completa con datos simulados, igual que la app, y después se conecta al backend compartido. La referencia de cada pantalla es la app (`../replica mobile/zairo`), que **solo se lee**. Cada fase termina con la verificación de `AGENTS.md` ("Antes de dar algo por terminado") y un commit.
+> **Lo que sigue está en "Recta final".** Las Fases 0 a 12 son el registro de lo construido, cuando la web todavía seguía a la app móvil. Cada fase termina con la verificación de `AGENTS.md` ("Antes de dar algo por terminado").
 
-## Dónde estamos (16 de octubre de 2026)
+## Dónde estamos (31 de octubre de 2026)
 
 **Fases 0 a 8 hechas** (commit "etapa 1", 12 de octubre), con el contraste y la carga en 3G ya medidos. **Fase 9 a medias:** Chrome y Firefox de escritorio probados. Faltan Chrome Android, Safari (iOS y escritorio) y el dictado con micrófono real en Chrome.
 
-**16 de octubre:** la app adoptó su marca nueva (manual y kit en su `docs/marca`). Se volvió a copiar `DESIGN.md` y se acordó que la web tiene interfaces propias cuando le hacen falta (`AGENTS.md`, `DESIGN-WEB.md` §1). **Fases 10 y 11 hechas:** la marca en la web y las correcciones y mejoras propias del navegador (sin commit, a la espera de revisión).
+**16 de octubre:** la app adoptó su marca nueva (manual y kit en su `docs/marca`). Se volvió a copiar `DESIGN.md` y se acordó que la web tiene interfaces propias cuando le hacen falta (`AGENTS.md`, `DESIGN-WEB.md` §1). **Fases 10 y 11 hechas:** la marca en la web y las correcciones y mejoras propias del navegador (commit `f6746b6`).
+
+**31 de octubre, cambio de rumbo:** la app se descontinuó. La web sigue sola y se entrega **completa el jueves 5 de noviembre de 2026**, con backend real y publicada con HTTPS. El alcance es el de la especificación: 11 módulos y 61 requisitos (`AGENTS.md`, "Fuentes de verdad").
+
+**Fases 13, 14 y 15 hechas:** la web corre contra Supabase real en São Paulo, con réplicas de Gemini, ayuda en crisis y chat con Replica. **Fase 16 hecha** (área profesional, 3 de noviembre). Sigue la Fase 17.
 
 ### Punto de partida (30 de septiembre de 2026)
 
@@ -184,37 +188,143 @@ Traducir la lógica de la app (TypeScript puro) y dejar de usar los servicios ac
 - [x] Revisión de Claude sobre lo implementado con Gemini (16 de octubre): contraste del calendario (los días con 2 notas tenían 2,97:1 y 1,99:1), celdas de 44 px, fechas fijas de nuevo a 13 px, texto "Distribución de ánimos" recuperado, "Tu día" de hoy con la línea "Tu réplica del día llega a las…" y la luna en malva, barras con token de movimiento y sin animación con "reducir movimiento".
 - [x] Propuestas aprobadas: escribir sobre los renglones de 24 px dentro de la hoja de Inicio (`WriterSheet.tsx`, `index.css`); calendario mensual tejido (`MonthCalendar.tsx`) en el panel derecho de Notas y encabezados de fecha fijos al bajar (`Notas.tsx`); "Tu día" (`/replica-dia/:dia`) muestra las notas del día y el aviso de cuándo llega la réplica cuando aún no se ha generado (`TuDia.tsx`).
 
+### Fase 12 — Bocetos del área profesional (Evaluación 4)
+
+Pedido del curso: los wireframes de cuatro interfaces a tres anchos, con notas al margen y una lista de verificación WCAG y responsive, en PNG horizontales dentro de un .zip. Las decisiones están en `DESIGN-WEB.md` §10; la propuesta de datos, en `03-base-de-datos.md`.
+
+- [x] Decisiones aprobadas (22 de octubre): la solicitud de acompañamiento antes del chat; el psicólogo puede dejar de atender a un paciente; el visor muestra solo las notas no privadas; la ayuda en crisis, solo en el boceto.
+- [x] Documentación: `DESIGN-WEB.md` §10, rutas en `02-estructura.md`, propuesta de datos en `03-base-de-datos.md` y reglas en `AGENTS.md`.
+- [x] Cinco láminas PNG horizontales en `entrega-evaluacion-4/salida/` (las 4 interfaces a 375, 768 y 1440 px, con estados y notas, más la lista de verificación con el contraste calculado), comprimidas en `Replica-Evaluacion-4-Bocetos.zip`. Se generan con `node entrega-evaluacion-4/fuentes/todo.mjs` (22 de octubre).
+- [ ] Entrega del .zip (23 de octubre de 2026). La lista de verificación va sin firma: el profesor no la exige.
+- [ ] Aprobación del profesor.
+
 ---
 
-## Etapa B — Backend (compartido con el equipo de la app)
+## Recta final: hasta el jueves 5 de noviembre
 
-- [ ] Acceso al proyecto de Supabase compartido y acuerdo de migraciones (`03-base-de-datos.md` §0).
-- [ ] Supabase Auth: Google, Apple si aplica, y correo con contraseña y código.
-- [ ] Tablas y reglas de acceso reales (ya definidas: no se rediseñan desde la web).
-- [ ] Consumir `generate-reply` y `generate-day-reply`: la web nunca llama a Gemini directamente.
-- [ ] Reemplazar `services/ai` y `services/auth` simulados.
-- [ ] Guardado sin conexión (IndexedDB) y sincronización.
-- [ ] Chat en tiempo real (Supabase Realtime) y Web Push (con eso vuelve el recordatorio).
+Reemplaza a las antiguas Etapas B y C. Lo nuevo se construye directo sobre Supabase, para no hacerlo dos veces, y el orden sigue la prioridad de la especificación. La web no tiene ejecutor de pruebas: se verifica con tipos, lint, build y el navegador. Toda fase termina sin errores en esas comprobaciones.
 
-## Etapa C — Prueba cerrada
+### Lo que solo puede hacer la persona responsable
 
-- [ ] Desplegar con HTTPS (Vercel o Netlify).
-- [ ] Evaluar si conviene una PWA instalable (notificaciones en iOS). Si sí, el manifiesto con los íconos del kit (`icon-192`, `icon-512`, `icon-maskable-512`).
-- [ ] Enlace compartido: `og-claro-1200x630.png`, descripción y `theme-color` en `index.html` (necesitan la dirección final).
-- [ ] Sumar psicólogos reales al piloto, con el mismo directorio que la app.
-- [ ] Medir lo mismo que la app: notas por usuario por semana, cuántos vuelven y uso del chat.
+Las cuentas y las claves son suyas y nunca pasan por el chat. La Fase 14 las necesita desde el sábado 31.
+
+Los pasos exactos de Supabase, Gemini, Google y el correo están en `supabase/README.md`.
+
+- [x] **Supabase:** crear el proyecto en São Paulo (`sa-east-1`), iniciar sesión en la terminal con `npx supabase login`, subir las migraciones y las funciones, y poner la dirección y la clave pública en `frontend/.env.local` (`.env.example` trae los nombres).
+- [x] **Gemini:** crear la clave en Google AI Studio y guardarla como secreto en Supabase, en la terminal: `npx supabase secrets set GEMINI_API_KEY=...`.
+- [x] **Réplica del día:** guardar `CRON_SECRET` como secreto y en Vault, con `project_url`. Sin esto, la réplica del día no se genera.
+- [ ] **Recorridos:** pegar `supabase/.temp/recorridos.sql` en el SQL Editor del proyecto. Hasta entonces, la web con Supabase muestra "No pudimos traer tu diario".
+- [x] **Google:** crear el cliente OAuth en Google Cloud para "Entrar con Google". Comprobado el 2 de noviembre en `localhost:5173`; falta agregar la dirección de Vercel en Google Cloud y en Supabase.
+- [ ] **Vercel:** crear la cuenta y conectarla al repositorio `Zstyles12/Proyecto-Replica` (Fase 18).
+- [x] **Correo (obligatorio):** conectar un SMTP propio y, después, cambiar las plantillas de confirmación y recuperación para que traigan el código (`{{ .Token }}`), con 6 dígitos. En un proyecto gratuito nuevo, sin SMTP propio las plantillas no se pueden editar y el código no llega: nadie podría crear su cuenta con correo. Resend necesita un dominio verificado; sin dominio sirve Gmail con una contraseña de aplicación.
+- [ ] **Dispositivos:** probar en un Android real y en un iPhone o una Mac (Fase 18).
+
+**Decisiones del 31 de octubre:** el proyecto es universitario y usa solo datos de prueba, con el plan gratuito de Supabase. El plan gratuito pausa los proyectos sin uso y no trae respaldos automáticos: hay que abrir el proyecto antes de la defensa. Los registros duran un día: lo que se compruebe en ellos (que una nota privada no llamó a Gemini) se mira el mismo día. El pago de Gemini está por decidir; en su nivel gratuito, Google puede usar lo que recibe para entrenar sus modelos. "Entrar con Apple" sale del proyecto: queda solo "Entrar con Google", que reemplaza a Apple en RF-05.
+
+### Fase 13 — Estructura por roles (sábado 31)
+
+No necesita claves. `AuthAccount.role`, la guarda por rol, el layout profesional en los tres anchos (`DESIGN-WEB.md` §10, "Anchos") con el lugar de `CrisisButton` reservado, y las entradas desde Usuario y la navegación.
+
+- [x] **Listo cuando:** cada cuenta de prueba (`02-estructura.md`, "Roles") ve su navegación a 375, 768 y 1440 px; una ruta de otro rol lleva a `/`; una cuenta normal no nota ningún cambio. Comprobado el 31 de octubre, también a 320 px con seis ítems y con una sesión guardada sin rol. Panel, Mensajes y Solicitudes tienen solo su título hasta la Fase 16.
+
+### Fase 14 — Backend y cuentas (sábado 31 a lunes 2)
+
+- [x] `supabase/migrations/`: las tablas y las columnas de `03-base-de-datos.md`, RLS en el 100 %, buckets `avatars` y `credentials`, y datos iniciales.
+- [x] Funciones `generate-reply`, `generate-day-reply` (programada) y `delete-account`.
+- [x] Supabase Auth: correo con contraseña y código, y Google. El rol llega de `app_metadata`.
+- [x] Servicios reales para cuenta, perfil, diario, réplicas, cofre, favoritas, Evolución y chat con psicólogos, este en tiempo real (RF-43). Lo simulado queda detrás del mismo contrato.
+
+Escrito el 31 de octubre y comprobado sin claves: las migraciones y las reglas en Postgres, 119 comprobaciones con varias cuentas; el manejo de las respuestas de Gemini con respuestas imitadas; y la web, en el navegador, contra una imitación local de Supabase. Nada de esto reemplaza la lista de abajo, que necesita el proyecto real.
+
+Contra el proyecto real, en São Paulo, el 31 de octubre: `npm run accesos` pasa completo (24 comprobaciones) y `npm run flujo` también: réplica de Gemini en unos 4 s, Storage con sus límites, tiempo real y eliminar una cuenta con sus archivos. La capa de datos de la web pasó entera con cuentas de persona y de psicóloga. Una nota privada se rechaza antes de Gemini y no gasta ninguna llamada. `npm run programada` también pasa: la réplica del día llegó sola, leyendo sus dos notas.
+
+La persona responsable comprobó el resto en la web, el mismo día: el código llegó a un correo real, la primera nota recibió su réplica y la segunda dijo "Guardar", los registros muestran solo la llamada de la primera, otro navegador ve las mismas notas y una cuenta eliminada ya no entra. Repetida el 2 de noviembre con el `CRON_SECRET` nuevo, `npm run programada` volvió a pasar: la réplica del día llegó a los 10,3 min y leyó sus dos notas.
+
+Los recorridos vistos pasaron a la cuenta el 2 de noviembre (`20261102000001_recorridos_en_la_cuenta.sql`). Pasaron en Postgres, con sus reglas de acceso, y en el navegador contra una imitación local: quedan en el servidor, vuelven al recargar y la cuenta siguiente no hereda nada. Contra el proyecto real falta aplicar la migración y repetir `npm run flujo` y la capa de datos. `npm run flujo` ahora envía seis notas a la vez: pasó contra el proyecto real, y solo una pide réplica al momento.
+
+`gemini-3.8-flash` pasó de los 30 s de límite: el modelo es `gemini-3.5-flash-lite`. Desde la red de la persona responsable, `db push` no llega al puerto 5432: las migraciones se subieron por SQL Editor (`supabase/README.md`).
+
+- [x] **Listo cuando:**
+  - con dos cuentas reales, A no puede leer ni escribir nada de B, comprobado con consultas directas a la base de datos;
+  - la primera nota del día recibe una réplica real, y la segunda dice "Guardar";
+  - una nota privada no llega a Gemini, y esa llamada no existe en los registros;
+  - eliminar la cuenta borra todo lo suyo, archivos incluidos;
+  - cerrar sesión y entrar en otro navegador muestra el mismo diario.
+
+### Fase 15 — Ayuda en crisis y chat con la IA (lunes 2)
+
+Se diseñan primero en `DESIGN-WEB.md` §11. Son los requisitos de prioridad Alta que faltan.
+
+- [x] `/ayuda`, `CrisisButton` en toda pantalla con sesión y `help_resources`. Cada línea lleva su fuente oficial y la fecha en que se comprobó; la persona responsable aprueba la lista antes de publicarla (RF-59, RF-60).
+- [x] Señales de riesgo en notas y mensajes (RF-61, RN-10).
+- [x] `/chat/ia` y `chat-with-ai`: respuesta palabra por palabra, historial, retomar, borrar con confirmación y límite diario (RF-57, RF-58).
+- [x] **Listo cuando:** una nota de riesgo de prueba recibe una respuesta sin consejos, con calidez y con el enlace a `/ayuda`; pasar el límite diario lo dice con la voz de Replica; un país sin línea comprobada no muestra ningún número inventado.
+
+Escrito el 3 de noviembre: diseño en `DESIGN-WEB.md` §11, migración `20261103000001_ayuda_y_chat_con_la_ia.sql` (`risk`, límite del chat y por ahora solo Venezuela, donde la persona responsable puede comprobarlas: la línea del Ministerio de Salud y la LAPSI de la Federación de Psicólogos (0424-2907338, de su publicación oficial del 29 de junio), cada una comprobada en su fuente ese día), la función `chat-with-ai` y las pantallas. En modo simulado pasa el "Listo cuando" completo, a 375, 767, 768, 1023, 1024 y 1440, en claro y en oscuro. Contra el proyecto real, el 3 de noviembre: la persona responsable aprobó las líneas, confirmó por teléfono que la LAPSI contesta y aplicó la migración. Con `chat-with-ai`, `generate-reply` y `generate-day-reply` publicadas, `npm run flujo` pasa completo, ahora con "Ayuda en crisis" y "Chat con Replica": la nota de riesgo de Gemini llega marcada, sin consejos y con preguntas de cuidado; el chat responde, marca el riesgo, guarda el historial, no deja escribir a otra cuenta ni al navegador, dice el límite con 429 sin guardar el mensaje y borra con sus mensajes.
+
+### Fase 16 — Área profesional (lunes 2 a martes 3)
+
+Sobre las tablas reales. El diseño está en `DESIGN-WEB.md` §10 y las láminas en `entrega-evaluacion-4/salida/`. Las piezas nuevas se construyen junto con la primera pantalla que las usa.
+
+- [x] **Solicitud de verificación** (`/usuario/psicologo`), con `FileDropzone` y `StatusPill`.
+  - **Listo cuando:** los cinco estados se recorren en el navegador; enviar incompleto marca cada campo junto a él, sin desactivar el botón; con teclado se agrega y se quita un PDF; los PDF siguen disponibles después de recargar.
+- [x] **Panel de administración** (`/profesional/admin`), con `DataTable`, `Skeleton`, `EmptyState`, `DateRangeFilter`, `PdfPreview`, el panel lateral como variante de `Dialog`, y `set-role`.
+  - **Listo cuando:** aprobar, pedir subsanación y rechazar cambian lo que ve la persona y dejan su fila en el historial; aprobar la vuelve psicóloga y la pone en el directorio; `?solicitud=:id` abre el expediente con enlace directo y el atrás del navegador lo cierra; la tabla pasa a tarjetas sin desborde a 375 px.
+- [x] **Acompañamiento y panel del psicólogo** (`/psicologo/:id`, `/chat`, `/profesional/dashboard`, `/profesional/mensajes`), con `care_requests`, agenda y sesiones. Mensajes se diseña antes en `DESIGN-WEB.md` §10.
+  - **Queda de la Fase 14:** hoy la persona abre y reabre su conversación directo, incluso una que el psicólogo terminó; con `care_requests`, solo aceptar debe abrirla. El aviso de compartir el diario está escrito para la persona ("Compartiste…"): el psicólogo necesita el suyo. Un perfil aprobado todavía puede cambiar su licencia. `last_read_at` es solo de la persona.
+  - **Tiempo real sin respaldo:** `subscribe` no mira su estado ni vuelve a traer los mensajes al conectarse o reconectarse, así que un evento perdido no aparece hasta recargar. El 2 de noviembre `npm run flujo` perdió una vez un mensaje hacia la psicóloga; no se repitió en 15 vueltas medidas después y la causa no se determinó.
+  - **Listo cuando:** la persona pide acompañamiento, ve "Esperando respuesta de {nombre}" y puede retirarlo; no puede pedírselo a un segundo psicólogo; al aceptar, el chat se abre en los dos lados; "Ahora no" llega con calma y sin `destructive`; el resumen solo muestra números calculados.
+- [x] **Visor y notas clínicas** (`/profesional/pacientes/:id`), con "Dejar de atender" y `ended_by`. Privacidad cuenta quién ve los documentos y las notas clínicas; si cambia lo aceptado, sube `TERMS_VERSION`.
+  - **Listo cuando:** una nota privada no sale de la base de datos hacia el psicólogo, comprobado con una consulta directa; la pantalla no tiene réplicas ni malva; al retirar el permiso las notas dejan de verse y las clínicas se quedan; "Dejar de atender" termina el proceso y el permiso, y la persona ve el evento.
+
+Hecho el 3 de noviembre: migración `20261103000002_area_profesional.sql` (solo aceptar abre la conversación, `ended_by`, lectura de cada lado, aviso con su tipo, licencia fija al aprobar, notas clínicas), la función `set-role`, `services/professional` con su versión simulada, las piezas `DataTable`, `DateRangeFilter`, `PdfPreview` y `Menu`, y las pantallas. El tiempo real vuelve a traer el estado al suscribirse y al reconectarse. En modo simulado se recorrió en 375, 767, 768, 1023, 1024 y 1440, y con teclado. Privacidad cuenta quién ve los documentos y las notas clínicas, y `TERMS_VERSION` pasó a `2026-11`. Contra el proyecto real, con la migración aplicada y `set-role` publicada por la persona responsable: `npm run accesos` pasa con la sección "Área profesional", y `npm run flujo` pasa con "Acompañamiento", "Tiempo real", "Visor y notas clínicas" (la nota privada no le llega a la psicóloga por consulta directa) y "Verificación". De cuatro vueltas de `flujo`, la primera tuvo una comprobación fallida que no quedó registrada; las tres siguientes pasaron completas.
+
+### Fase 17 — Funciones restantes (miércoles 4)
+
+Se diseñan primero en `DESIGN-WEB.md` §11.
+
+- [x] Exportar notas en PDF o texto (RF-29) y compartir una nota suelta en el chat (RF-44).
+- [x] Bloqueo con PIN y llave de acceso (RF-52).
+- [x] Recordatorio diario con Web Push (RF-53). Contra el proyecto real, el 3 de noviembre: la suscripción se registra, la tarea programada encuentra a la cuenta a su hora y `send-reminders` responde `{"due":1,"sent":1}` (el servicio de avisos lo aceptó). El aviso no apareció en la pantalla de la persona responsable y no se averiguó si lo ocultó el navegador o Windows. En un navegador sin servicio de avisos (por ejemplo, Brave sin activarlo) la suscripción falla y la web dice "Revisa tu conexión", que no es el motivo.
+- [x] Sin conexión: guardado en IndexedDB y sincronización (RNF-13).
+- [x] **Si el tiempo aprieta**, se corta en este orden y se oculta lo que no llegue: recordatorio (RF-53, prioridad Baja), llave de acceso (queda el PIN) y guardado sin conexión. No hizo falta cortar nada.
+- [x] **Listo cuando:** cada función hace lo que dice su requisito en el navegador, o está oculta y anotada aquí.
+
+Hecho el 3 de noviembre, en modo simulado: exportar arma el archivo en el navegador (PDF con jsPDF y las fuentes estándar, o texto) con el rango y, si se pide, las notas privadas; la nota suelta se elige en una hoja desde el chat y nunca ofrece una privada; el bloqueo pide el PIN al abrir y tras 1, 5 o 15 minutos sin uso, con espera de 30 segundos tras cinco intentos, y la llave de acceso se ofrece solo si el dispositivo tiene su propio bloqueo; el recordatorio se activa con el permiso del navegador; sin conexión, Replica abre con la copia de IndexedDB y las notas esperan con "Se envía cuando vuelva la conexión.". Tipos, lint y build sin errores. Revisado en 375, 767, 768, 1023, 1024 y 1440, en claro y en oscuro, y con teclado. Las comprobaciones nuevas están en `npm run accesos` ("Sin conexión y recordatorio") y `npm run flujo` ("Nota suelta en el chat").
+
+**Falta con el proyecto real** (solo la persona responsable):
+- [ ] Pegar `supabase/.temp/funciones-restantes.sql` en el SQL Editor.
+- [ ] Crear las claves VAPID y guardarlas (`supabase/README.md`, paso 3), con la pública también en `frontend/.env.local`. Sin ella, el recordatorio no aparece en la web.
+- [ ] Publicar `send-reminders`: `npx -y supabase functions deploy send-reminders --yes`.
+- [x] Correr `npm run accesos` y `npm run flujo`. Pasaron completos el 4 de noviembre, con "Sin conexión y recordatorio" y "Nota suelta en el chat".
+- [ ] Ver llegar un aviso real: en el panel del navegador de desarrollo las notificaciones están denegadas, así que el aviso mismo no se vio.
+
+### Fase 18 — Publicación y verificación (miércoles 4 a jueves 5)
+
+- [ ] Publicar en Vercel con HTTPS, cabeceras de seguridad y CSP. La configuración está lista y probada en local (`frontend/vercel.json`, `02-estructura.md`, "Publicación"); falta que la persona responsable cree el proyecto en Vercel.
+- [x] Enlace compartido y manifiesto: `og-claro-1200x630.png`, descripción, `theme-color`, `icon-192`, `icon-512` e `icon-maskable-512` (`DESIGN-WEB.md` §9).
+- [x] Revisar los 61 requisitos y los 15 no funcionales uno por uno, con su resultado: [`05-requisitos.md`](05-requisitos.md).
+- [x] La lista WCAG y responsive de la lámina 5, con el contraste medido en claro y en oscuro.
+  - **Hallazgos del 2 de noviembre:** `TourHost` declara `aria-modal`, pero el foco se queda en la página y Tab recorre la pantalla de atrás. Por debajo de 44 px: chips de ánimo y tema, filtros de Notas y del Directorio, pestañas de Evolución y botones de Meet (36), el campo de `/chat` (40), filas de Notas (24) y días de Evolución (16). En `/evolucion`, con barra de desplazamiento clásica, una tarjeta se recorta 3 px a 768 y 769.
+  - **Corregido el 4 de noviembre**, en la versión construida (modo simulado, con la CSP de Vercel):
+    - `TourHost` va en un portal y deja la página inerte: Tab recorre solo "Saltar todo" y "Siguiente", y Escape devuelve la página.
+    - Lo que se dibuja a 36 px o menos se toca en 44 px con `tap-area` (`DESIGN-WEB.md` §2), también `Button` `sm` del área profesional. El campo de `/chat` y el pie de las frases del cofre pasan a 44 px. Las filas de Notas ya se tocaban en toda la tarjeta.
+    - La tela de Evolución pasa a celdas de 18 px a 24 px entre centros (WCAG 2.5.8), y sin el ancho mínimo de 320 px, que la hacía desplazarse 11 px a 375. A 768 y 769, con barra clásica de 15 px, nada se recorta ni desborda.
+  - **Lámina 5, medido el mismo día** en las pantallas de la persona y del área profesional (Panel, Mensajes, paciente y Solicitudes):
+    - Contraste: ningún texto bajo 4,5:1 (3:1 los grandes), en claro y en oscuro (435 textos de la persona).
+    - Tamaño del objetivo: 44 px en todo lo tocable a 375, con las dos excepciones de `DESIGN-WEB.md` §2.
+    - Reflow: sin desborde a 320, 375, 767, 768, 769, 1023, 1024 y 1440.
+    - Campos: todos con etiqueta y a 16 px.
+    - Tabla: `caption`, `th scope` y `aria-sort` en la fecha de Solicitudes.
+    - Foco atrapado en ventanas y recorridos.
+- [ ] Recorrido completo en la dirección pública, con Chrome Android y Safari si hay dispositivos (Fase 9).
+- [ ] **Listo cuando:** la dirección pública pasa el recorrido completo con cuentas reales, y cada requisito tiene su resultado anotado.
 
 ## Pendiente de decidir
 
-**Solo en la web:**
 - **Panel derecho de Inicio en escritorio.** Propuesta: solo las dos frases del día. Alternativas: dejar las notas recientes, o una sola columna.
-- **Recordatorio diario.** Propuesta: no ofrecerlo hasta que Web Push funcione.
+- Set final de ánimos.
 
-**Compartido con el equipo de la app** (no se decide solo desde la web):
-- Cómo encuentra el usuario a su psicólogo.
-- Quién verifica a los psicólogos y desde dónde (un panel de administración en la web es candidato).
-- Set final de ánimos. (El logo ya está definido: manual y kit en `docs/marca` de la app.)
+## Fuera del proyecto
 
-## Pausado (igual que la app)
-
-Planes y suscripciones, pagos, videollamadas propias, chat con la IA, pantalla de ayuda en crisis y exportar notas.
+Planes y suscripciones, pagos y videollamadas propias.

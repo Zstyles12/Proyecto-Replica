@@ -59,7 +59,7 @@ export const Evolucion: React.FC = () => {
                   role="radio"
                   aria-checked={selected}
                   onClick={() => setPeriod(p.value)}
-                  className={`min-h-9 flex-1 rounded-full px-4 text-[13px] font-medium transition-all duration-indicator ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice sm:flex-initial ${
+                  className={`relative tap-area min-h-9 flex-1 rounded-full px-4 text-[13px] font-medium transition-all duration-indicator ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice sm:flex-initial ${
                     selected ? "bg-surface-raised text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >

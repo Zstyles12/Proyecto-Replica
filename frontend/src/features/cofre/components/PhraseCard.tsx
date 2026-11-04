@@ -79,7 +79,7 @@ export const PhraseCard: React.FC<{
               e.stopPropagation();
               navigate(`/notas/${phrase.noteId}`);
             }}
-            className={`min-w-0 flex-1 truncate rounded text-left text-xs text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice`}
+            className={`min-h-11 min-w-0 flex-1 truncate rounded text-left text-xs text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice`}
             aria-label={`Abrir la nota de la que salió: ${phrase.source}`}
           >
             {footer}

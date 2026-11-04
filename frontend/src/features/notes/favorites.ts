@@ -1,3 +1,4 @@
+import { dataService } from '../../services/data';
 import { readString, writeString } from '../../lib/storage';
 import { useSyncExternalStore } from 'react';
 
@@ -5,6 +6,7 @@ import { useSyncExternalStore } from 'react';
 const KEY = 'replica.noteFavorites';
 
 function load(): string[] {
+  if (dataService) return [];
   const raw = readString(KEY);
   if (!raw) return ['seed-1', 'seed-3', 'seed-9'];
   try {
@@ -22,16 +24,28 @@ function subscribe(listener: () => void) {
   return () => listeners.delete(listener);
 }
 
+function apply(next: string[]) {
+  ids = next;
+  if (!dataService) writeString(KEY, JSON.stringify(ids));
+  listeners.forEach((l) => l());
+}
+
 export const noteFavorites = {
   clear() {
-    ids = [];
-    writeString(KEY, JSON.stringify(ids));
-    listeners.forEach((l) => l());
+    apply([]);
+  },
+  hydrate(list: string[]) {
+    apply(list);
+  },
+  // Una nota borrada deja de ser favorita. En el servidor se fue con la nota.
+  forget(noteId: string) {
+    if (ids.includes(noteId)) apply(ids.filter((id) => id !== noteId));
   },
   toggle(noteId: string) {
-    ids = ids.includes(noteId) ? ids.filter((id) => id !== noteId) : [noteId, ...ids];
-    writeString(KEY, JSON.stringify(ids));
-    listeners.forEach((l) => l());
+    const previous = ids;
+    const adding = !ids.includes(noteId);
+    apply(adding ? [noteId, ...ids] : ids.filter((id) => id !== noteId));
+    dataService?.setNoteFavorite(noteId, adding).catch(() => apply(previous));
   },
 };
 

@@ -1,0 +1,50 @@
+-- Datos iniciales. Los temas son SUGGESTED_TAGS (features/journal/moods.ts) y las frases del día son la
+-- biblioteca de features/cofre/library.ts: si esta crece, las nuevas van en una migración nueva.
+-- help_resources queda vacía: cada línea lleva su fuente comprobada y llega en la Fase 15.
+
+insert into public.tags (name) values
+  ('Trabajo'), ('Familia'), ('Pareja'), ('Amistades'), ('Salud'), ('Estudios'), ('Dinero'), ('Yo');
+
+insert into public.daily_phrases (id, body, author, kind) values
+  ('a01', 'No tienes que resolverlo todo hoy. Basta con el siguiente paso.', null, 'aliento'),
+  ('a02', 'Descansar también es avanzar.', null, 'aliento'),
+  ('a03', 'Lo que sientes es válido, aunque todavía no sepas nombrarlo.', null, 'aliento'),
+  ('a04', 'Hoy puedes tratarte con la misma ternura que a alguien que quieres.', null, 'aliento'),
+  ('a05', 'Pedir ayuda es un acto de valentía, no de debilidad.', null, 'aliento'),
+  ('a06', 'Un mal día no es una mala vida.', null, 'aliento'),
+  ('a07', 'Respira. Este momento también va a pasar.', null, 'aliento'),
+  ('a08', 'No necesitas ganarte el descanso.', null, 'aliento'),
+  ('a09', 'Está bien ir despacio.', null, 'aliento'),
+  ('a10', 'Tus límites cuidan lo que te importa.', null, 'aliento'),
+  ('a11', 'Poner en palabras lo que duele ya es empezar a aliviarlo.', null, 'aliento'),
+  ('a12', 'Lo pequeño que haces cada día también cuenta.', null, 'aliento'),
+  ('a13', 'Escúchate con la misma paciencia que les tienes a los demás.', null, 'aliento'),
+  ('a14', 'Cerrar un día difícil sin castigarte ya es un logro.', null, 'aliento'),
+  ('a15', 'La calma no se encuentra: se practica.', null, 'aliento'),
+  ('a16', 'Está bien no tener todas las respuestas.', null, 'aliento'),
+  ('a17', 'Agradecer algo pequeño cambia el tono del día.', null, 'aliento'),
+  ('a18', 'Tu valor no depende de lo productivo que fuiste hoy.', null, 'aliento'),
+  ('a19', 'Sentir mucho no es un defecto: es tu forma de estar en el mundo.', null, 'aliento'),
+  ('a20', 'Mañana es otra página en blanco.', null, 'aliento'),
+  ('a21', 'Lo que hoy pesa, mañana puede verse distinto.', null, 'aliento'),
+  ('a22', 'Decir que no a algo también es decir que sí a ti.', null, 'aliento'),
+  ('a23', 'Tienes permiso para empezar de nuevo, las veces que haga falta.', null, 'aliento'),
+  ('a24', 'Puedes cambiar la forma en que te hablas.', null, 'aliento'),
+  ('a25', 'No todo lo urgente es importante.', null, 'aliento'),
+  ('a26', 'Cuidarte no es egoísmo: es lo que te permite cuidar a otros.', null, 'aliento'),
+  ('a27', 'Hoy, con estar un poco más presente, alcanza.', null, 'aliento'),
+  ('a28', 'Nadie florece todo el año.', null, 'aliento'),
+  ('c01', 'No es que tengamos poco tiempo, es que perdemos mucho.', 'Séneca', 'cita'),
+  ('c02', 'Sufrimos más en la imaginación que en la realidad.', 'Séneca', 'cita'),
+  ('c03', 'Mientras vivas, sigue aprendiendo a vivir.', 'Séneca', 'cita'),
+  ('c04', 'No nos inquietan las cosas, sino las opiniones que tenemos sobre ellas.', 'Epicteto', 'cita'),
+  ('c05', 'Dite primero quién quieres ser; luego haz lo que tengas que hacer.', 'Epicteto', 'cita'),
+  ('c06', 'El alma se tiñe del color de sus pensamientos.', 'Marco Aurelio', 'cita'),
+  ('c07', 'Muy poco se necesita para tener una vida feliz.', 'Marco Aurelio', 'cita'),
+  ('c08', 'No arruines lo que tienes deseando lo que no tienes.', 'Epicuro', 'cita'),
+  ('c09', 'Un viaje de mil millas empieza con un solo paso.', 'Lao Tse', 'cita'),
+  ('c10', 'Nadie se baña dos veces en el mismo río.', 'Heráclito', 'cita'),
+  ('c11', 'Caminante, no hay camino, se hace camino al andar.', 'Antonio Machado', 'cita'),
+  ('c12', 'Paciencia y barajar.', 'Miguel de Cervantes', 'cita'),
+  ('c13', 'Hoy la tierra y los cielos me sonríen; hoy llega al fondo de mi alma el sol.', 'Gustavo Adolfo Bécquer', 'cita'),
+  ('c14', 'La esperanza es esa cosa con plumas que se posa en el alma.', 'Emily Dickinson', 'cita');
