@@ -1,5 +1,5 @@
-// Carga los datos de la demostración en el proyecto de Supabase: el diario de Lucía (unos tres meses,
-// con sus réplicas), su proceso con Valeria, otras personas en el panel de la psicóloga y solicitudes
+// Carga los datos de la demostración en el proyecto de Supabase: el diario de Lucía (un año: a ratos de diciembre
+// a julio y seguido desde agosto, con sus réplicas), su proceso con Valeria, otras personas en el panel de la psicóloga y solicitudes
 // de verificación en cada estado para el panel de administración. Todo es ficticio y solo usa cuentas
 // @replica.test. Se puede correr varias veces: borra lo que dejó la vez anterior y lo vuelve a crear,
 // con las fechas contadas desde hoy. No toca a ana@ ni a beto@, que usan las pruebas.
@@ -113,7 +113,7 @@ const tagId = Object.fromEntries(tagRows.map((t) => [t.name, t.id]));
 must(
   await admin
     .from("profiles")
-    .update({ intention: "Entender por qué me canso tanto.", created_at: at(93, "21:00") })
+    .update({ intention: "Entender por qué me canso tanto.", created_at: at(337, "21:00") })
     .eq("id", ids.lucia),
   "intención de Lucía"
 );

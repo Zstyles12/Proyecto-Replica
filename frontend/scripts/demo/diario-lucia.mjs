@@ -7,7 +7,10 @@
 // Día: { ago, notes, day? }
 //   day: [titular, cuerpo, [pregunta, pregunta], aprendizaje, [comentario por nota no privada]]
 
+import { EARLIER } from "./diario-lucia-antes.mjs";
+
 export const DAYS = [
+  ...EARLIER,
   {
     ago: 92,
     notes: [
@@ -15,9 +18,9 @@ export const DAYS = [
         at: "22:15",
         mood: "cansancio",
         tag: "Yo",
-        text: "Primera vez que escribo en un diario desde el colegio. Hoy cerramos el mes en la oficina y salí a las nueve. Me duele el cuello y aun así no puedo dormir. Quiero entender por qué me canso tanto.",
+        text: "Vuelvo a escribir aquí. Esta vez quiero hacerlo en serio. Hoy cerramos el mes en la oficina y salí a las nueve. Me duele el cuello y aun así no puedo dormir. Quiero entender por qué me canso tanto.",
         reply: [
-          "Lucía, empezaste por la pregunta que más te importa.",
+          "Lucía, volviste con la pregunta que más te importa.",
           "Escribes que te cansas tanto que el cuerpo duele y el sueño no llega. Es mucho para un solo día, y aun así te sentaste a escribirlo. Aquí no hace falta tener la respuesta todavía.",
           ["¿Qué parte del día te deja más agotada?", "¿Cuándo fue la última vez que descansaste sin culpa?"],
           "Preguntarse por el cansancio ya es empezar a escucharlo.",
