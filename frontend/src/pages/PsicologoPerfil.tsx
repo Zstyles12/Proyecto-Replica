@@ -9,6 +9,7 @@ import { Field } from "../components/ui/Field";
 import { Avatar } from "../features/care/components/CareParts";
 import { activeConversation, care, pendingRequest, useCare } from "../features/care/store";
 import { findPsychologist } from "../features/care/data";
+import { currentUserId } from "../lib/session";
 
 const NOTE_MAX = 2000;
 
@@ -77,7 +78,13 @@ export const PsicologoPerfil: React.FC = () => {
   };
 
   let action: React.ReactNode;
-  if (current) {
+  if (psychologist.id === currentUserId()) {
+    action = (
+      <Notice title="Este es tu perfil público">
+        Así te ven las personas en el directorio.
+      </Notice>
+    );
+  } else if (current) {
     action = (
       <Notice title={`Ya trabajas con ${current.name}`}>
         En Replica trabajas con un psicólogo a la vez. Para cambiar, termina tu proceso desde el perfil de {current.name.split(" ")[0]}.

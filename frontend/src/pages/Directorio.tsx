@@ -4,14 +4,18 @@ import { ChevronRight } from "lucide-react";
 import { PageHeader } from "../components/layout/PageHeader";
 import { Avatar } from "../features/care/components/CareParts";
 import { PSYCHOLOGISTS } from "../features/care/data";
+import { currentUserId } from "../lib/session";
 
 
 // El directorio de psicólogos (app/(tabs)/chat/directorio.tsx): todos con su licencia verificada, con
 // un filtro por especialidad. Cada uno abre su perfil.
 export const Directorio: React.FC = () => {
   const [active, setActive] = useState("all");
-  const list = active === "all" ? PSYCHOLOGISTS : PSYCHOLOGISTS.filter((p) => p.specialties.includes(active));
-  const specialties = [...new Set(PSYCHOLOGISTS.flatMap((p) => p.specialties))].sort();
+  // Un psicólogo verificado no se ve a sí mismo: no puede pedirse acompañamiento.
+  const me = currentUserId();
+  const others = PSYCHOLOGISTS.filter((p) => p.id !== me);
+  const list = active === "all" ? others : others.filter((p) => p.specialties.includes(active));
+  const specialties = [...new Set(others.flatMap((p) => p.specialties))].sort();
   const options = [{ key: "all", label: "Todos" }, ...specialties.map((s) => ({ key: s, label: s }))];
 
   return (

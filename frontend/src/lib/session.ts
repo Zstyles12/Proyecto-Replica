@@ -85,6 +85,11 @@ function subscribe(listener: () => void) {
   };
 }
 
+// El id de la cuenta con sesión abierta: ya está puesto cuando la web muestra sus pantallas.
+export function currentUserId() {
+  return currentUser;
+}
+
 export function useStage() {
   return useSyncExternalStore(subscribe, () => stageOf(session));
 }
