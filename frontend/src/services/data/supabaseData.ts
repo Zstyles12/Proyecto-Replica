@@ -56,7 +56,7 @@ type DirectoryRow = {
   approach: string;
   years_experience: number;
   bio: string;
-  availability: { minutes?: number } | null;
+  availability: { minutes?: number; days?: number[]; from?: string; to?: string } | null;
 };
 type ConversationRow = {
   id: string;
@@ -164,6 +164,10 @@ function psychologistOf(row: DirectoryRow): Psychologist {
     meetLink: "",
     hours: [],
     sessionMinutes: row.availability?.minutes ?? 50,
+    schedule:
+      row.availability?.days?.length && row.availability.from && row.availability.to
+        ? { days: row.availability.days, from: row.availability.from, to: row.availability.to }
+        : undefined,
   };
 }
 

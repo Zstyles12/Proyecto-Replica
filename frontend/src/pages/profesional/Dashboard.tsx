@@ -1,4 +1,5 @@
 import React, { useEffect, useId, useState } from "react";
+import { describeSchedule, withinSchedule } from "../../features/care/schedule";
 import { Link } from "react-router-dom";
 import { CalendarClock, Inbox, NotebookText, Users, Video } from "lucide-react";
 import { ProfessionalPage } from "../../components/layout/ProfessionalPage";
@@ -366,7 +367,8 @@ function Sessions({ practice, onNotice }: { practice: Practice; onNotice: (text:
   };
 
   const field = "h-12 w-full rounded-md border border-border bg-surface px-4 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-voice/40";
-  const hours = `${practice.availability.from} a ${practice.availability.to}`;
+  const agenda = describeSchedule(practice.availability);
+  const outside = !!day && !!hour && !withinSchedule(practice.availability, day, hour);
 
   return (
     <div className="space-y-3">
@@ -462,7 +464,9 @@ function Sessions({ practice, onNotice }: { practice: Practice; onNotice: (text:
                 <input id={hourId} type="time" step={900} className={field} value={hour} onChange={(e) => setHour(e.target.value)} />
               </div>
             </div>
-            <p className="text-[13px] text-muted-foreground">Tu agenda: de {hours}.</p>
+            <p role="status" className="text-[13px] text-muted-foreground">
+              {outside ? `Está fuera de tu agenda (${agenda}). Puedes agendarla igual.` : `Tu agenda: ${agenda}.`}
+            </p>
             {error ? (
               <p role="alert" className="text-[13px] text-emotion">
                 {error}

@@ -1,4 +1,5 @@
 import type { Mood } from '../journal/moods';
+import type { WeeklySchedule } from './schedule';
 
 export type Psychologist = {
   id: string;
@@ -14,6 +15,8 @@ export type Psychologist = {
   hours: number[];
   // Lo que dura cada sesión, de su agenda.
   sessionMinutes: number;
+  // Los días y el horario en que atiende, si los guardó.
+  schedule?: WeeklySchedule;
 };
 
 export type MessageKind = 'text' | 'session' | 'event';

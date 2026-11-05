@@ -9,6 +9,7 @@ import { Field } from "../components/ui/Field";
 import { Avatar } from "../features/care/components/CareParts";
 import { activeConversation, care, pendingRequest, useCare } from "../features/care/store";
 import { findPsychologist } from "../features/care/data";
+import { describeSchedule } from "../features/care/schedule";
 import { currentUserId } from "../lib/session";
 
 const NOTE_MAX = 2000;
@@ -168,6 +169,9 @@ export const PsicologoPerfil: React.FC = () => {
             <Video size={18} className="text-muted-foreground" aria-hidden="true" />
             {psychologist.sessionMinutes} minutos por Google Meet
           </p>
+          {psychologist.schedule ? (
+            <p className="text-base text-muted-foreground">Atiende {describeSchedule(psychologist.schedule)}.</p>
+          ) : null}
         </Section>
       </Enter>
 
