@@ -177,7 +177,7 @@ export const PsicologoPerfil: React.FC = () => {
 
       {isMine && active ? (
         <Enter index={3} className="flex justify-center pb-4">
-          <Button variant="ghost" size="sm" className="!text-destructive" onClick={() => setConfirmingEnd(true)}>
+          <Button variant="ghost" size="sm" className="!border-destructive/50 !text-destructive hover:!bg-destructive/10" onClick={() => setConfirmingEnd(true)}>
             Terminar mi proceso con {firstName}
           </Button>
         </Enter>

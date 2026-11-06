@@ -42,8 +42,9 @@ export const Button: React.FC<ButtonProps> = ({
       "bg-voice text-voice-foreground hover:opacity-95 shadow-sm active:bg-voice",
     secondary:
       "bg-muted text-foreground hover:bg-muted/80 active:bg-muted",
+    // Con recuadro: sin él, un botón de texto se confunde con texto suelto (DESIGN-WEB.md §7).
     ghost:
-      "bg-transparent text-voice hover:bg-voice-soft/30 active:bg-voice-soft/50",
+      "border border-border bg-transparent text-voice hover:border-voice/50 hover:bg-voice-soft/30 active:bg-voice-soft/50",
     destructive:
       "bg-destructive text-destructive-foreground hover:opacity-90 active:bg-destructive",
   }[variant];

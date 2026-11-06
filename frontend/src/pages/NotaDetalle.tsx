@@ -47,7 +47,7 @@ export const NotaDetalle: React.FC = () => {
           <div className="space-y-2 border-t border-border/60 pt-4">
             <Button
               variant="ghost"
-              className="-ml-3 !text-destructive"
+              className="!border-destructive/50 !text-destructive hover:!bg-destructive/10"
               icon={<Trash2 size={18} aria-hidden="true" />}
               onClick={() => setConfirming(true)}
             >
