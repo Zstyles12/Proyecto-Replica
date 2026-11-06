@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
-import { NotebookText, NotepadText } from "lucide-react";
+import { NotebookText, NotepadText, ShieldCheck } from "lucide-react";
 import { ProfessionalPage } from "../../components/layout/ProfessionalPage";
 import { Button } from "../../components/ui/Button";
 import { DateRangeFilter } from "../../components/ui/DateRangeFilter";
@@ -20,6 +20,24 @@ const CLINICAL_MAX = 4000;
 
 function firstName(name: string) {
   return name.split(" ")[0] || name;
+}
+
+// El consentimiento activo, a la vista antes de las notas (DESIGN-WEB.md §10, Visor).
+function ConsentNotice({ patient }: { patient: Patient }) {
+  const name = firstName(patient.name);
+  return (
+    <aside aria-label="Diario compartido" className="flex gap-3 rounded-lg border border-voice/30 bg-surface px-4 py-3">
+      <ShieldCheck size={20} className="mt-0.5 shrink-0 text-voice" aria-hidden="true" />
+      <div className="space-y-1">
+        <p className="text-[15px] font-semibold leading-[21px] text-foreground">
+          {patient.shareChangedAt ? `${name} te compartió su diario el ${dateLabel(patient.shareChangedAt)}.` : `${name} te compartió su diario.`}
+        </p>
+        <p className="text-[13px] leading-[18px] text-muted-foreground">
+          Ves sus notas, nunca las privadas ni sus réplicas. Puede retirar el permiso cuando quiera, y lo que leas aquí es confidencial.
+        </p>
+      </div>
+    </aside>
+  );
 }
 
 // Las notas que compartió, por día y con sus filtros. Sin permiso activo no se pide ninguna: el servidor
@@ -76,9 +94,12 @@ function SharedNotes({ patient }: { patient: Patient }) {
   if (!notes) return <Skeleton rows={3} shape="card" label="Cargando sus notas…" />;
   if (!notes.length) {
     return (
-      <EmptyState icon={NotebookText} title={`${name} todavía no escribió notas que puedas leer.`}>
-        Sus notas privadas no aparecen aquí.
-      </EmptyState>
+      <div className="space-y-5">
+        <ConsentNotice patient={patient} />
+        <EmptyState icon={NotebookText} title={`${name} todavía no escribió notas que puedas leer.`}>
+          Sus notas privadas no aparecen aquí.
+        </EmptyState>
+      </div>
     );
   }
 
@@ -89,6 +110,7 @@ function SharedNotes({ patient }: { patient: Patient }) {
 
   return (
     <div className="space-y-5">
+      <ConsentNotice patient={patient} />
       <div className="space-y-4 rounded-lg bg-surface px-4 py-4">
         {moods.length > 1 ? (
           <div role="group" aria-label="Ánimo" className="flex flex-wrap gap-2">

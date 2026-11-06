@@ -293,6 +293,7 @@ Cada lado marca su propia lectura: lo leído por la persona no cuenta para el ps
 **Visor (`/profesional/pacientes/:id`).**
 - Cabecera: el nombre y "Más acciones" (un menú desplegable con "Escribirle" y "Dejar de atender"). La confirmación dice: "Termina el acompañamiento: ya no podrán escribirse y dejarás de ver su diario. {Persona} verá el aviso en su chat. Tus notas clínicas se quedan contigo."
 - Las notas, como en Notas: por día, encabezados fijos, el ánimo con su color y el tema. Filtros: los ánimos que existen en sus notas y `DateRangeFilter`.
+- **Con permiso, arriba de las notas, el aviso de confidencialidad:** una franja `surface` con el ícono `ShieldCheck` en `voice`: "{Persona} te compartió su diario el {fecha}." y debajo "Ves sus notas, nunca las privadas ni sus réplicas. Puede retirar el permiso cuando quiera, y lo que leas aquí es confidencial." Es un `<aside>` con su etiqueta, para que el lector de pantalla lo anuncie antes de las notas. Agregado el 6 de noviembre, para el consentimiento activo que pide la rúbrica de Interfaces.
 - Sin permiso: "{Persona} todavía no te compartió su diario." o "{Persona} dejó de compartir su diario el {fecha}."
 - Notas clínicas: desde 1024 px en el panel contextual; por debajo, un botón "Notas clínicas" abre el panel lateral o la hoja. "Nueva nota", cada una con su fecha, "Editar" y "Borrar" (este con confirmación en `destructive`). Encabezado: "Solo tú las ves. {Persona} nunca las lee."
 
