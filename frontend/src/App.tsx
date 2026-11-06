@@ -33,7 +33,8 @@ const PsicologoPerfil = lazy(() => import("./pages/PsicologoPerfil").then((m) =>
 const Usuario = lazy(() => import("./pages/Usuario").then((m) => ({ default: m.Usuario })));
 const SoyPsicologo = lazy(() => import("./pages/SoyPsicologo").then((m) => ({ default: m.SoyPsicologo })));
 const Cofre = lazy(() => import("./pages/Cofre").then((m) => ({ default: m.Cofre })));
-const Playground = lazy(() => import("./pages/Playground").then((m) => ({ default: m.Playground })));
+// Solo en desarrollo: en producción ni siquiera se publica el archivo.
+const Playground = import.meta.env.DEV ? lazy(() => import("./pages/Playground").then((m) => ({ default: m.Playground }))) : null;
 const Legal = lazy(() => import("./pages/Legal").then((m) => ({ default: m.Legal })));
 const Dashboard = lazy(() => import("./pages/profesional/Dashboard").then((m) => ({ default: m.Dashboard })));
 const Mensajes = lazy(() => import("./pages/profesional/Mensajes").then((m) => ({ default: m.Mensajes })));
@@ -78,7 +79,7 @@ export function App() {
       <Suspense fallback={<div className="min-h-screen bg-background" />}>
       <Routes>
         <Route path="/legal/:doc" element={<Legal />} />
-        {import.meta.env.DEV ? <Route path="/playground" element={<Playground />} /> : null}
+        {Playground ? <Route path="/playground" element={<Playground />} /> : null}
 
         {stage === "auth" ? (
           <>
