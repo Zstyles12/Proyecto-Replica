@@ -313,7 +313,7 @@ export const Paciente: React.FC = () => {
       title={patient.name}
       description={
         ended
-          ? `${patient.endedBy === "psychologist" ? `Dejaste de atender a ${name}` : `${name} terminó su proceso contigo`} el ${dateLabel(patient.endedAt ?? patient.since)}.`
+          ? `${patient.endedBy === "psychologist" ? `Dejaste de atender a ${name}` : patient.endedBy === "replica" ? `Tu acompañamiento con ${name} terminó al retirarse tu verificación` : `${name} terminó su proceso contigo`} el ${dateLabel(patient.endedAt ?? patient.since)}.`
           : `Le acompañas desde el ${dateLabel(patient.since)}.`
       }
       panelTitle="Notas clínicas"

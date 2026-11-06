@@ -190,7 +190,7 @@ export function supabaseProfessionalService(supabase: SupabaseClient): Professio
     async loadPractice() {
       const uid = await me();
       const [profile, requests, conversations, shares] = await Promise.all([
-        supabase.from("psychologist_profiles").select("full_name, meet_link, availability").eq("profile_id", uid).single(),
+        supabase.from("psychologist_profiles").select("full_name, title, license, university, specialties, approach, years_experience, bio, meet_link, availability").eq("profile_id", uid).single(),
         supabase
           .from("care_requests")
           .select("id, user_id, message, status, created_at, responded_at")
@@ -200,7 +200,18 @@ export function supabaseProfessionalService(supabase: SupabaseClient): Professio
         supabase.from("conversations").select("id, user_id, created_at, psychologist_read_at, ended_at, ended_by").eq("psychologist_id", uid),
         supabase.from("diary_shares").select("user_id, active, changed_at").eq("psychologist_id", uid),
       ]);
-      const p = rows<{ full_name: string; meet_link: string | null; availability: Partial<Availability> | null }>(profile);
+      const p = rows<{
+        full_name: string;
+        title: string;
+        license: string;
+        university: string | null;
+        specialties: string[];
+        approach: string;
+        years_experience: number;
+        bio: string;
+        meet_link: string | null;
+        availability: Partial<Availability> | null;
+      }>(profile);
       const requestRows = rows<RequestRow[]>(requests);
       const conversationRows = rows<ConversationRow[]>(conversations);
       const shareRows = rows<ShareRow[]>(shares);
@@ -235,6 +246,15 @@ export function supabaseProfessionalService(supabase: SupabaseClient): Professio
           .pop();
       return {
         name: p.full_name,
+        profile: {
+          title: p.title,
+          license: p.license,
+          university: p.university ?? "",
+          specialties: p.specialties,
+          approach: p.approach,
+          years: p.years_experience,
+          bio: p.bio,
+        },
         meetLink: p.meet_link ?? "",
         availability: availabilityOf(p.availability),
         requests: requestRows
@@ -287,6 +307,17 @@ export function supabaseProfessionalService(supabase: SupabaseClient): Professio
 
     async saveSchedule(meetLink, availability) {
       checked(await supabase.from("psychologist_profiles").update({ meet_link: meetLink, availability }).eq("profile_id", await me()));
+    },
+
+    async saveProfile(profile) {
+      checked(
+        await supabase.rpc("update_public_profile", {
+          p_specialties: profile.specialties,
+          p_approach: profile.approach,
+          p_years: profile.years,
+          p_bio: profile.bio,
+        })
+      );
     },
 
     async schedule(conversationId, startsAt, minutes, meetLink) {

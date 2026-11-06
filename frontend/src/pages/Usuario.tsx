@@ -28,6 +28,7 @@ const PSYCHOLOGIST_STATUS = {
   pending: "Tu solicitud está en revisión",
   needs_changes: "Hay algo que corregir en tu solicitud",
   rejected: "Tu solicitud no fue aprobada",
+  revoked: "Tu verificación fue retirada",
   approved: "Perfil verificado",
 } as const;
 

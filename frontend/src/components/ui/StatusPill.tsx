@@ -1,5 +1,5 @@
 import React from "react";
-import { BadgeCheck, CircleX, FilePen, Hourglass, type LucideIcon } from "lucide-react";
+import { BadgeCheck, CircleX, FilePen, Hourglass, ShieldOff, type LucideIcon } from "lucide-react";
 import type { ApplicationStatus } from "../../services/professional";
 
 const STATES: Record<ApplicationStatus, { icon: LucideIcon; label: string; className: string }> = {
@@ -7,6 +7,7 @@ const STATES: Record<ApplicationStatus, { icon: LucideIcon; label: string; class
   needs_changes: { icon: FilePen, label: "Por corregir", className: "bg-emotion-soft text-emotion" },
   approved: { icon: BadgeCheck, label: "Aprobada", className: "bg-voice-soft text-voice" },
   rejected: { icon: CircleX, label: "Rechazada", className: "bg-surface-sunken text-destructive" },
+  revoked: { icon: ShieldOff, label: "Retirada", className: "bg-surface-sunken text-destructive" },
 };
 
 /**

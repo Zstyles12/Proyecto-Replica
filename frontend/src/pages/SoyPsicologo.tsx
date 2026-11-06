@@ -8,7 +8,7 @@ import { Field } from "../components/ui/Field";
 import { FileDropzone } from "../components/ui/FileDropzone";
 import { Skeleton } from "../components/ui/Skeleton";
 import { StatusPill } from "../components/ui/StatusPill";
-import { SPECIALTIES } from "../features/care/data";
+import { SpecialtyPicker } from "../features/professional/components/SpecialtyPicker";
 import { professional, useProfessional } from "../features/professional/store";
 import { useUploads } from "../features/professional/uploads";
 import { dateLabel, fileSize } from "../lib/format";
@@ -115,7 +115,7 @@ function Explainer() {
 
 function ApplicationFormView({ application, onSent }: { application: Application | null; onSent: () => void }) {
   const correcting = application?.status === "needs_changes";
-  const fresh = !application || application.status === "rejected";
+  const fresh = !application || application.status === "rejected" || application.status === "revoked";
   // Por corregir: lo que pidió reemplazar la última revisión. Lo demás se queda.
   const lastReview = application?.reviews[0];
   const toReplace = correcting ? (application?.documents ?? []).filter((d) => !d.replaced && lastReview?.documentIds.includes(d.id)) : [];
@@ -206,36 +206,7 @@ function ApplicationFormView({ application, onSent }: { application: Application
         onChange={(e) => set({ years: e.target.value === "" ? null : Number(e.target.value) })}
         error={errors.years}
       />
-      <fieldset className="space-y-2" aria-describedby={errors.specialties ? "especialidades-error" : undefined}>
-        <legend className="text-[13px] text-muted-foreground">Especialidades</legend>
-        <div className="flex flex-wrap gap-2 pt-1">
-          {SPECIALTIES.map((s) => {
-            const selected = form.specialties.includes(s);
-            return (
-              <label
-                key={s}
-                className={`inline-flex min-h-11 cursor-pointer items-center rounded-full border px-4 text-sm transition-colors duration-small has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-voice ${
-                  selected ? "border-voice/50 bg-voice/10 text-voice" : "border-border/70 text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  className="sr-only"
-                  checked={selected}
-                  aria-invalid={(!!errors.specialties && !form.specialties.length) || undefined}
-                  onChange={() => set({ specialties: selected ? form.specialties.filter((x) => x !== s) : [...form.specialties, s] })}
-                />
-                {s}
-              </label>
-            );
-          })}
-        </div>
-        {errors.specialties ? (
-          <p id="especialidades-error" role="alert" className="text-[13px] text-emotion">
-            {errors.specialties}
-          </p>
-        ) : null}
-      </fieldset>
+      <SpecialtyPicker value={form.specialties} onChange={(specialties) => set({ specialties })} error={errors.specialties} errorId="especialidades-error" />
       <Field label="Enfoque (opcional)" placeholder="Terapia cognitivo-conductual" value={form.approach} onChange={(e) => set({ approach: e.target.value })} maxLength={120} />
       <Field
         label="Sobre ti (opcional)"
@@ -274,7 +245,7 @@ function ApplicationFormView({ application, onSent }: { application: Application
           onRemove={uploads.remove}
           error={errors.documents ?? uploads.error}
         />
-        {fresh && application?.status === "rejected" ? (
+        {fresh && application ? (
           <p className="text-[13px] text-muted-foreground">Una solicitud nueva lleva sus documentos de nuevo.</p>
         ) : null}
       </div>
@@ -337,7 +308,7 @@ export const SoyPsicologo: React.FC = () => {
     if (app?.status === "approved" && role === "user") professionalService.myRole().then(sessionActions.setRole, () => {});
   }, [app?.status, role]);
 
-  const showForm = application.status === "ready" && (!app || app.status === "needs_changes" || (app.status === "rejected" && editing));
+  const showForm = application.status === "ready" && (!app || app.status === "needs_changes" || ((app.status === "rejected" || app.status === "revoked") && editing));
 
   let body: React.ReactNode;
   if (application.status === "idle" || application.status === "loading") {
@@ -380,11 +351,13 @@ export const SoyPsicologo: React.FC = () => {
         <Summary application={app} />
       </div>
     );
-  } else if (app?.status === "rejected") {
+  } else if (app?.status === "rejected" || app?.status === "revoked") {
     body = (
       <div className="space-y-4">
-        <StatusPill status="rejected" />
-        <p className="text-[15px] leading-[21px] text-foreground">No pudimos aprobar tu solicitud.</p>
+        <StatusPill status={app.status} />
+        <p className="text-[15px] leading-[21px] text-foreground">
+          {app.status === "revoked" ? "Retiramos tu verificación." : "No pudimos aprobar tu solicitud."}
+        </p>
         {app.statusReason ? (
           <blockquote className="rounded-md bg-surface px-4 py-3 text-[15px] leading-[21px] text-foreground">{app.statusReason}</blockquote>
         ) : null}

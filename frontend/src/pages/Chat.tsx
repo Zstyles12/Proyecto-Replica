@@ -100,7 +100,11 @@ function CareStatus() {
       <section className="space-y-3 rounded-lg bg-surface px-5 py-4">
         <div className="space-y-1">
           <p className="text-[15px] leading-[21px] text-foreground">
-            {conversation.endedBy === "psychologist" ? `${firstName} terminó el acompañamiento el ${when}.` : `Terminaste tu proceso con ${firstName} el ${when}.`}
+            {conversation.endedBy === "psychologist"
+              ? `${firstName} terminó el acompañamiento el ${when}.`
+              : conversation.endedBy === "replica"
+                ? `El acompañamiento con ${firstName} terminó el ${when}: su perfil ya no está verificado en Replica.`
+                : `Terminaste tu proceso con ${firstName} el ${when}.`}
           </p>
           <p className="text-[13px] text-muted-foreground">Tu diario ya no está compartido.</p>
         </div>

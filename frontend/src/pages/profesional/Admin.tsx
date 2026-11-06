@@ -24,6 +24,7 @@ const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
   { value: "needs_changes", label: "Por corregir" },
   { value: "approved", label: "Aprobadas" },
   { value: "rejected", label: "Rechazadas" },
+  { value: "revoked", label: "Retiradas" },
   { value: "all", label: "Todas" },
 ];
 
@@ -31,6 +32,7 @@ const ACTION_LABEL: Record<ReviewAction, string> = {
   approved: "Aprobada",
   needs_changes: "Pidió una corrección",
   rejected: "Rechazada",
+  revoked: "Verificación retirada",
 };
 
 function firstName(name: string) {
@@ -40,6 +42,85 @@ function firstName(name: string) {
 function DocumentPreview({ document }: { document: VerificationDocument }) {
   const load = useCallback(() => professionalService.documentUrl(document), [document]);
   return <PdfPreview name={document.name} sizeBytes={document.sizeBytes} load={load} />;
+}
+
+// Retirar la verificación de alguien aprobado (DESIGN-WEB.md §10): irreversible para sus pacientes, así
+// que va en destructive, con el motivo obligatorio y lo que pasa dicho antes de confirmar.
+function Revoke({ application, onDone }: { application: Application; onDone: (text: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const name = firstName(application.fullName);
+
+  const close = () => {
+    setOpen(false);
+    setReason("");
+    setError(null);
+    setFailed(false);
+  };
+
+  const revoke = async () => {
+    if (busy) return;
+    if (reason.trim().length < 3) {
+      setError("Escribe el motivo: es lo que va a leer.");
+      return;
+    }
+    setBusy(true);
+    const ok = await professional.review(application.id, "revoked", reason.trim(), []);
+    setBusy(false);
+    if (!ok) {
+      setFailed(true);
+      return;
+    }
+    close();
+    onDone(`Retiraste la verificación de ${name}. Ya no aparece en el directorio.`);
+  };
+
+  return (
+    <div>
+      <Button variant="ghost" className="!border-destructive/50 !text-destructive hover:!bg-destructive/10" onClick={() => setOpen(true)}>
+        Retirar la verificación
+      </Button>
+      <Dialog
+        open={open}
+        onClose={close}
+        title={`Retirar la verificación de ${name}`}
+        description="Sale del directorio y pierde su panel. Sus acompañamientos terminan, sus pacientes dejan de compartirle el diario y se cancelan sus sesiones."
+        footer={
+          <>
+            <Button variant="secondary" size="sm" onClick={close}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" size="sm" onClick={() => void revoke()} aria-busy={busy || undefined}>
+              Retirar la verificación
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <Field
+            label="Motivo"
+            multiline
+            maxLength={1000}
+            value={reason}
+            onChange={(e) => {
+              setReason(e.target.value);
+              setError(null);
+            }}
+            error={error}
+            data-autofocus
+          />
+          {failed ? (
+            <p role="alert" className="text-[13px] text-emotion">
+              No pudimos retirar la verificación. Puede que ya no esté aprobada; la lista se actualizó.
+            </p>
+          ) : null}
+        </div>
+      </Dialog>
+    </div>
+  );
 }
 
 // Lo que se puede decidir sobre una solicitud pendiente, cada cosa con su ventana.
@@ -97,7 +178,7 @@ function Decisions({ application, onDone }: { application: Application; onDone: 
         <Button variant="secondary" onClick={() => setOpen("needs_changes")}>
           Solicitar subsanación
         </Button>
-        <Button variant="ghost" className="!text-destructive" onClick={() => setOpen("rejected")}>
+        <Button variant="ghost" className="!border-destructive/50 !text-destructive hover:!bg-destructive/10" onClick={() => setOpen("rejected")}>
           Rechazar
         </Button>
       </div>
@@ -229,6 +310,8 @@ function Expediente({ application, onDone }: { application: Application; onDone:
 
       {application.status === "pending" ? (
         <Decisions application={application} onDone={onDone} />
+      ) : application.status === "approved" ? (
+        <Revoke application={application} onDone={onDone} />
       ) : application.status === "needs_changes" ? (
         <p className="rounded-md bg-surface px-4 py-3 text-[15px] leading-[21px] text-foreground">Esperando que {firstName(application.fullName)} corrija.</p>
       ) : null}

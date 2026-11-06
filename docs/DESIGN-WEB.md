@@ -29,6 +29,7 @@ Replica se diseña para el navegador, en el teléfono y en la computadora. Cada 
 - **Barra lateral:** las mismas cinco secciones, con el mismo ícono y nombre que la app. La activa se marca con **el hilo salvia de 2,5 px**, vertical, a la izquierda del ícono.
 - Arriba, el logotipo de Replica (sección 9), nunca un emoji.
 - **El anillado:** la barra lateral es el lomo del cuaderno y el contenido, la hoja. En el borde entre las dos van los anillos del ícono de la marca (la misma curva y el mismo agujero, de la geometría del kit), uno cada dos renglones, con el agujero entre dos líneas. Van pegados a la hoja, no a la barra: se mueven con los renglones al hacer scroll y siempre quedan alineados. Anillos en `subtle` y agujeros en `border`, en claro y en oscuro. Decorativos (`aria-hidden`, sin foco ni toques), sin animación y por debajo de ventanas y recorridos. Entran 17 px en la hoja: el contenido empieza al menos 24 px después del borde. Solo desde 768 px (`components/layout/SpiralBinding.tsx`). Aprobado con la app el 16 de octubre.
+- Al pie, sobre "Ayuda en crisis", **"Cerrar sesión"** (ícono `LogOut`, mismo estilo que los enlaces del pie). Pide la misma confirmación que Usuario → Tu cuenta ("¿Cerrar sesión?") y está en las dos áreas, la personal y la profesional. En el teléfono se sigue cerrando desde Usuario. Pedido por el profesor de Interfaces el 6 de noviembre.
 - Abajo, el selector de tema (claro, oscuro, sistema) como atajo; es el mismo ajuste de Usuario → Apariencia y tiene que estar siempre sincronizado con él.
 - El enlace al Playground solo aparece en desarrollo (`import.meta.env.DEV`).
 - `aria-current="page"` en la sección activa.
@@ -103,6 +104,7 @@ Con la cuenta real, la web trae todo antes de mostrar nada: mientras tanto, solo
 - Tailwind tiene que poder aplicar opacidad a esos tokens (`border-border/40`, `bg-reply-soft/25`…). Con `var(--x)` sin más, **Tailwind 3 no genera esas clases**. Cada color del config se define de forma que acepte opacidad (por ejemplo con `color-mix(in srgb, var(--x) <alpha>, transparent)`), y se comprueba en el CSS generado.
 - El modo "Sistema" aplica el bloque oscuro con `prefers-color-scheme` cuando no hay tema elegido. Las variantes `dark:` de Tailwind deben funcionar también en ese caso.
 - `prefers-reduced-motion` se respeta en **todas** las animaciones: queda solo la opacidad.
+- **Botones de texto (`ghost`):** llevan su recuadro, un borde de 1 px en `border` que pasa a `voice/50` al pasar el cursor, para que se lean como botones y no como texto suelto. Los que hacen algo irreversible (rechazar, retirar, borrar, terminar un proceso) llevan el texto y el borde en `destructive`. Pedido por el profesor de Interfaces el 6 de noviembre.
 
 ## 8. Fuera del proyecto
 
@@ -245,7 +247,9 @@ Completa lo anterior. La voz, los tokens y las piezas son los de siempre; en el 
 - Columnas: Nombre, Cédula, Universidad (secundaria), Enviada (orden por fecha, `aria-sort`) y Estado, con "Revisar". Con el panel contextual abierto, la tabla tiene poco sitio: es tabla desde 560 px de ancho propio y muestra Universidad desde 760 px; por debajo, una tarjeta por solicitud (a 1024 px de ventana, tarjetas).
 - Filtros: el estado en pastillas que bajan de línea (Pendientes, Por corregir, Aprobadas, Rechazadas y Todas; cinco no caben en un `Segmented`), "Buscar por nombre o cédula" y `DateRangeFilter`. Menos de 768 px van en "Filtrar" (una hoja, con "Ver {n} solicitudes"); desde 768 px, a la vista sobre la tabla.
 - El expediente: desde 1024 px en el panel contextual (sin solicitud elegida: "Elige una solicitud para ver su expediente."); entre 768 y 1023 px en el panel lateral superpuesto, y en el teléfono a pantalla completa. Abrirlo agrega `?solicitud=:id` al historial, y cerrarlo (o el atrás del navegador) lo quita.
-- Las acciones solo están con la solicitud **pendiente**. Por corregir dice "Esperando que {nombre} corrija."; aprobada y rechazada muestran su historial.
+- Las acciones solo están con la solicitud **pendiente**. Por corregir dice "Esperando que {nombre} corrija."; rechazada y retirada muestran su historial.
+- **Aprobada:** "Retirar la verificación" (`destructive`, la única acción). Su ventana explica qué pasa ("Sale del directorio y pierde su panel. Sus acompañamientos terminan, sus pacientes dejan de compartirle el diario y se cancelan sus sesiones.") y pide el motivo, obligatorio, que la persona va a leer. Queda en el historial como "Verificación retirada". Agregado el 6 de noviembre, a pedido de la persona responsable.
+- El estado nuevo es **Retirada** (`StatusPill`, como Rechazada) y tiene su filtro. Quien la tenía ve en "Soy psicólogo" "Retiramos tu verificación.", el motivo y "Enviar otra solicitud".
 - "Solicitar subsanación" abre una ventana con una casilla por documento ("Pedir que reemplace {archivo}") y "Qué hay que corregir" (obligatorio). "Rechazar" pide el motivo en su ventana, con el botón en `destructive`.
 
 **Acompañamiento, del lado de la persona.**
@@ -267,6 +271,7 @@ Completa lo anterior. La voz, los tokens y las piezas son los de siempre; en el 
 | Dejó de compartir | "Dejaste de compartir tu diario con {psicólogo}." | "{Persona} dejó de compartir su diario." |
 | Lo terminó la persona | "Terminaste tu proceso con {psicólogo}." | "{Persona} terminó su proceso contigo." |
 | Lo terminó el psicólogo | "{Psicólogo} terminó el acompañamiento." | "Dejaste de atender a {persona}." |
+| Se retiró su verificación | "El acompañamiento con {psicólogo} terminó: su perfil ya no está verificado en Replica." | — (ya no tiene panel) |
 
 Cada lado marca su propia lectura: lo leído por la persona no cuenta para el psicólogo.
 
@@ -275,6 +280,7 @@ Cada lado marca su propia lectura: lo leído por la persona no cuenta para el ps
 - Solicitudes: tarjeta con el nombre, la fecha, el mensaje y "Aceptar" (`voice`) o "Ahora no" (`secondary`, con una confirmación: "Le diremos que por ahora no puedes y que puede buscar a otro psicólogo.").
 - Pacientes (`DataTable`): Nombre, Desde, Diario (Compartido o Privado), Próxima sesión y "Abrir". Los que terminaron van en "Terminados", debajo, para releer sus notas clínicas.
 - Agenda: "Tu enlace de Meet" (`https://meet.google.com/…`, con "Copiar" y "Probar"), los días (casillas), "Desde" y "Hasta", la duración (`Segmented`: 30, 45, 50 y 60 min) y "Guardar agenda". Debajo, las próximas sesiones con "Cancelar" (confirmación sin `destructive`) y "Agendar una sesión" (paciente, día y hora; sin enlace guardado, primero lo pide). La agenda guía y no bloquea: si el día o la hora quedan fuera, el diálogo lo dice ("Está fuera de tu agenda… Puedes agendarla igual.") y deja agendar. Los días y el horario se ven en el perfil público, en "Sesiones": "Atiende de lunes a viernes, de 15:00 a 19:00."
+- **Tu perfil público:** una tarjeta junto a la Agenda. Se editan "Sobre ti" (hasta 280 caracteres, con el conteo), las especialidades (casillas, al menos una), el enfoque y los años de experiencia, con "Guardar perfil". El nombre, el título, la licencia y la universidad se muestran sin campo, con "Lo verificó el equipo de Replica." Los cambios se ven en el directorio. Agregado el 6 de noviembre.
 - Autorizaciones: en el panel contextual desde 1024 px y al final por debajo. Cada cambio con su fecha: "{Persona} te compartió su diario" o "dejó de compartirlo".
 
 **Mensajes (`/profesional/mensajes` y `/profesional/mensajes/:id`).**

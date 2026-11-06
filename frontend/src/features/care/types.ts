@@ -22,7 +22,7 @@ export type Psychologist = {
 export type MessageKind = 'text' | 'session' | 'event';
 
 // Los avisos que deja el servidor. Cada lado los dice a su manera (DESIGN-WEB.md §10).
-export type MessageEvent = 'accepted' | 'share_on' | 'share_off' | 'ended_user' | 'ended_psychologist';
+export type MessageEvent = 'accepted' | 'share_on' | 'share_off' | 'ended_user' | 'ended_psychologist' | 'ended_replica';
 
 export type Message = {
   id: string;
@@ -48,7 +48,8 @@ export type Conversation = {
   lastReadAt: string;
   // Cuando terminó el proceso, y quién lo terminó. Solo hay una activa a la vez.
   endedAt?: string;
-  endedBy?: 'user' | 'psychologist';
+  // 'replica': se retiró la verificación del psicólogo.
+  endedBy?: 'user' | 'psychologist' | 'replica';
 };
 
 // El acompañamiento empieza con una solicitud: la conversación se abre cuando el psicólogo acepta.

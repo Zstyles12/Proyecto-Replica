@@ -6,8 +6,9 @@ import type { AccountRole } from "../auth";
 // revisión por un administrador y el consultorio del psicólogo verificado. Las reglas viven en el
 // servidor (supabase/migrations/20261103000002_area_profesional.sql); la web solo las sigue.
 
-export type ApplicationStatus = "pending" | "needs_changes" | "approved" | "rejected";
-export type ReviewAction = "approved" | "needs_changes" | "rejected";
+export type ApplicationStatus = "pending" | "needs_changes" | "approved" | "rejected" | "revoked";
+// "revoked": el administrador retiró la verificación de alguien aprobado.
+export type ReviewAction = "approved" | "needs_changes" | "rejected" | "revoked";
 
 export type ApplicationForm = {
   fullName: string;
@@ -75,15 +76,21 @@ export type Patient = {
   conversationId: string;
   since: string;
   endedAt: string | null;
-  endedBy: "user" | "psychologist" | null;
+  endedBy: "user" | "psychologist" | "replica" | null;
   // Lo último que leyó el psicólogo de esta conversación.
   readAt: string;
   sharing: boolean;
   shareChangedAt: string | null;
 };
 
+// Lo que el psicólogo cuenta de sí mismo y puede cambiar. Lo verificado (nombre, título, licencia y
+// universidad) va aparte y no se edita.
+export type EditableProfile = { specialties: string[]; approach: string; years: number; bio: string };
+export type PublicProfile = EditableProfile & { title: string; license: string; university: string };
+
 export type Practice = {
   name: string;
+  profile: PublicProfile;
   meetLink: string;
   availability: Availability;
   requests: PracticeRequest[];
@@ -124,6 +131,7 @@ export interface ProfessionalService {
   markRead(conversationId: string): Promise<void>;
   endCare(conversationId: string): Promise<void>;
   saveSchedule(meetLink: string, availability: Availability): Promise<void>;
+  saveProfile(profile: EditableProfile): Promise<void>;
   schedule(conversationId: string, startsAt: string, minutes: number, meetLink: string): Promise<Appointment>;
   cancelAppointment(id: string): Promise<void>;
   patientNotes(patientId: string): Promise<SharedNote[]>;

@@ -4,6 +4,7 @@ import {
   type Application,
   type ApplicationForm,
   type Availability,
+  type EditableProfile,
   type Patient,
   type Practice,
   type ReviewAction,
@@ -215,6 +216,16 @@ export const professional = {
     return true;
   },
 
+  async saveProfile(profile: EditableProfile) {
+    try {
+      await professionalService.saveProfile(profile);
+    } catch {
+      return false;
+    }
+    setPractice((p) => ({ ...p, profile: { ...p.profile, ...profile } }));
+    return true;
+  },
+
   async saveSchedule(meetLink: string, availability: Availability) {
     try {
       await professionalService.saveSchedule(meetLink, availability);
@@ -306,6 +317,8 @@ export function practiceEventText(event: MessageEvent | undefined, patientName: 
       return `${first} terminó su proceso contigo.`;
     case "ended_psychologist":
       return `Dejaste de atender a ${first}.`;
+    case "ended_replica":
+      return `Tu acompañamiento con ${first} terminó al retirarse tu verificación.`;
     default:
       return fallback;
   }

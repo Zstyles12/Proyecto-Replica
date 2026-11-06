@@ -8,6 +8,7 @@ import {
   type ClinicalNote,
   type Practice,
   type ProfessionalService,
+  type PublicProfile,
   type SharedNote,
   type UploadedDocument,
   type VerificationDocument,
@@ -23,6 +24,16 @@ const DELAY = 500;
 type StoredApplication = Application & { email: string };
 type MockPractice = Practice & { notes: Record<string, SharedNote[]>; clinical: ClinicalNote[] };
 type World = { applications: StoredApplication[]; practice: MockPractice };
+
+const MOCK_PROFILE: PublicProfile = {
+  title: "Psicóloga clínica",
+  license: "N.º 14.382",
+  university: "Universidad Católica Andrés Bello",
+  specialties: ["Ansiedad", "Autoestima", "Estrés laboral"],
+  approach: "Terapia cognitivo-conductual",
+  years: 9,
+  bio: "Acompaño a personas que sienten que la ansiedad les está ganando. Trabajo con herramientas concretas y a tu ritmo.",
+};
 
 const wait = (ms = DELAY) => new Promise((resolve) => setTimeout(resolve, ms));
 const id = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -88,6 +99,7 @@ function seedPractice(): MockPractice {
   });
   return {
     name: "Valeria Rondón",
+    profile: MOCK_PROFILE,
     meetLink: "https://meet.google.com/rpl-valr-ond",
     availability: DEFAULT_AVAILABILITY,
     requests: [
@@ -372,7 +384,7 @@ export const mockProfessionalService: ProfessionalService = {
   async review(applicationId, action, reason, documentIds) {
     await wait();
     const app = world.applications.find((a) => a.id === applicationId);
-    if (!app || app.status !== "pending") throw new Error("ya revisada");
+    if (!app || (action === "revoked" ? app.status !== "approved" : app.status !== "pending")) throw new Error("ya revisada");
     const now = new Date().toISOString();
     const reviewed: StoredApplication = {
       ...app,
@@ -392,13 +404,14 @@ export const mockProfessionalService: ProfessionalService = {
     };
     world = { ...world, applications: world.applications.map((a) => (a.id === applicationId ? reviewed : a)) };
     save();
-    if (action === "approved") syncMockDirectory();
+    if (action === "approved" || action === "revoked") syncMockDirectory();
   },
 
   async loadPractice() {
     await wait(700);
     const { notes: _notes, clinical: _clinical, ...practice } = world.practice;
-    return clone(practice);
+    // Una simulación guardada antes de que existiera el perfil editable.
+    return clone({ ...practice, profile: practice.profile ?? MOCK_PROFILE });
   },
 
   async answerRequest(requestId, accept) {
@@ -457,6 +470,14 @@ export const mockProfessionalService: ProfessionalService = {
     await wait();
     world.practice = { ...world.practice, meetLink, availability };
     save();
+  },
+
+  async saveProfile(profile) {
+    await wait();
+    world.practice = { ...world.practice, profile: { ...(world.practice.profile ?? MOCK_PROFILE), ...profile } };
+    save();
+    const valeria = PSYCHOLOGISTS.find((p) => p.id === "psi-valeria");
+    if (valeria) Object.assign(valeria, { specialties: profile.specialties, approach: profile.approach, years: profile.years, bio: profile.bio });
   },
 
   async schedule(conversationId, startsAt, minutes, meetLink) {

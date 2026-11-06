@@ -22,7 +22,8 @@ import {
 } from "../../features/professional/store";
 import { DESKTOP, useMediaQuery } from "../../hooks/useMediaQuery";
 import { dateLabel, inputDate, sessionLabel, timeLabel } from "../../lib/format";
-import type { Availability, Patient, Practice, PracticeRequest } from "../../services/professional";
+import type { Availability, EditableProfile, Patient, Practice, PracticeRequest } from "../../services/professional";
+import { SpecialtyPicker } from "../../features/professional/components/SpecialtyPicker";
 
 // De lunes a domingo, como se piensa una semana de trabajo. 0 es domingo.
 const WEEK: { day: number; label: string; short: string }[] = [
@@ -329,6 +330,82 @@ function ScheduleForm({ practice, onNotice }: { practice: Practice; onNotice: (t
   );
 }
 
+const BIO_MAX = 280;
+
+// Lo que el psicólogo cuenta de sí mismo en el directorio (DESIGN-WEB.md §10). Lo verificado se muestra
+// sin campo: solo el equipo de Replica lo cambia.
+function ProfileForm({ practice, onNotice }: { practice: Practice; onNotice: (text: string) => void }) {
+  const { profile } = practice;
+  const [form, setForm] = useState<EditableProfile>({ specialties: profile.specialties, approach: profile.approach, years: profile.years, bio: profile.bio });
+  const [errors, setErrors] = useState<{ specialties?: string; years?: string }>({});
+  const [busy, setBusy] = useState(false);
+  const set = (patch: Partial<EditableProfile>) => {
+    setForm((f) => ({ ...f, ...patch }));
+    setErrors({});
+  };
+
+  const save = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const found: typeof errors = {};
+    if (!form.specialties.length) found.specialties = "Elige al menos una especialidad.";
+    if (!Number.isInteger(form.years) || form.years < 0 || form.years > 70) found.years = "Escribe tus años de experiencia, de 0 a 70.";
+    if (found.specialties || found.years) return setErrors(found);
+    setBusy(true);
+    const ok = await professional.saveProfile({ ...form, approach: form.approach.trim(), bio: form.bio.trim() });
+    setBusy(false);
+    onNotice(ok ? "Guardamos tu perfil. Así se ve en el directorio." : "No pudimos guardar tu perfil. Revisa tu conexión e inténtalo otra vez.");
+  };
+
+  const verified: [string, string][] = [
+    ["Nombre", practice.name],
+    ["Cómo te presentas", profile.title],
+    ["Licencia", profile.license],
+    ["Universidad", profile.university],
+  ];
+
+  return (
+    <form noValidate onSubmit={save} className="space-y-5 rounded-lg border border-border/40 bg-surface-raised p-5 shadow-raised dark:shadow-none">
+      <div className="space-y-2 rounded-md bg-surface px-4 py-3">
+        <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
+          {verified
+            .filter(([, value]) => value)
+            .map(([label, value]) => (
+              <div key={label} className="min-w-0">
+                <dt className="text-[13px] text-muted-foreground">{label}</dt>
+                <dd className="break-words text-[15px] text-foreground">{value}</dd>
+              </div>
+            ))}
+        </dl>
+        <p className="text-[13px] text-muted-foreground">Lo verificó el equipo de Replica.</p>
+      </div>
+
+      <SpecialtyPicker value={form.specialties} onChange={(specialties) => set({ specialties })} error={errors.specialties} errorId="perfil-especialidades-error" />
+      <Field label="Enfoque (opcional)" placeholder="Terapia cognitivo-conductual" value={form.approach} onChange={(e) => set({ approach: e.target.value })} maxLength={120} />
+      <Field
+        label="Años de experiencia"
+        type="number"
+        inputMode="numeric"
+        min={0}
+        max={70}
+        value={Number.isNaN(form.years) ? "" : form.years}
+        onChange={(e) => set({ years: e.target.value === "" ? Number.NaN : Number(e.target.value) })}
+        error={errors.years}
+      />
+      <Field
+        label="Sobre ti (opcional)"
+        multiline
+        maxLength={BIO_MAX}
+        count={{ value: form.bio.length, max: BIO_MAX }}
+        value={form.bio}
+        onChange={(e) => set({ bio: e.target.value })}
+      />
+      <Button type="submit" aria-busy={busy || undefined}>
+        {busy ? "Guardando…" : "Guardar perfil"}
+      </Button>
+    </form>
+  );
+}
+
 function Sessions({ practice, onNotice }: { practice: Practice; onNotice: (text: string) => void }) {
   const sessions = upcomingSessions(practice);
   const active = activePatients(practice);
@@ -548,6 +625,10 @@ export const Dashboard: React.FC = () => {
 
         <Section title="Pacientes" id="dash-pacientes">
           <Patients practice={p} />
+        </Section>
+
+        <Section title="Tu perfil público" id="dash-perfil">
+          <ProfileForm practice={p} onNotice={setNotice} />
         </Section>
 
         <Section title="Agenda" id="dash-agenda">
