@@ -1,11 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Sun, Moon, Laptop, Code2 } from "lucide-react";
+import { Sun, Moon, Laptop, Code2, LogOut } from "lucide-react";
 import { NAVIGATION_CONTENT, type NavItem } from "../../data/navigationContent";
 import { useTheme } from "../../hooks/useTheme";
 import { ReplicaWordmark } from "../brand/Logo";
 import { NAV_ICONS } from "./navIcons";
 import { CrisisButton } from "../help/CrisisButton";
+import { ConfirmDialog } from "../ui/Dialog";
+import { sessionActions } from "../../lib/session";
 
 /**
  * Barra lateral para escritorio según Sección 6 de DESIGN.md:
@@ -18,6 +20,7 @@ export const SidebarNav: React.FC<{ sections: NavItem[]; areaLabel?: string }> =
   const location = useLocation();
   const currentPath = location.pathname;
   const { theme, setTheme } = useTheme();
+  const [confirmingLogout, setConfirmingLogout] = useState(false);
 
   return (
     <aside
@@ -63,9 +66,19 @@ export const SidebarNav: React.FC<{ sections: NavItem[]; areaLabel?: string }> =
         </nav>
       </div>
 
-      {/* Pie de barra lateral: Ayuda en crisis, Tema y Playground */}
+      {/* Pie de barra lateral: Cerrar sesión, Ayuda en crisis, Tema y Playground */}
       <div className="space-y-4 pt-4 border-t border-border/20">
-        <CrisisButton variant="sidebar" className="-mx-1" />
+        <div className="-mx-1 space-y-1">
+          <button
+            type="button"
+            onClick={() => setConfirmingLogout(true)}
+            className="flex min-h-11 w-full items-center gap-3 rounded-full px-3.5 text-left text-sm text-muted-foreground transition-colors duration-small hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-voice"
+          >
+            <LogOut size={18} strokeWidth={2} className="ml-1 shrink-0" aria-hidden="true" />
+            <span>Cerrar sesión</span>
+          </button>
+          <CrisisButton variant="sidebar" />
+        </div>
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>Tema</span>
           <div role="group" aria-label="Tema" className="inline-flex p-0.5 rounded-full bg-surface-sunken border border-border/30">
@@ -124,6 +137,15 @@ export const SidebarNav: React.FC<{ sections: NavItem[]; areaLabel?: string }> =
         </Link>
         ) : null}
       </div>
+
+      <ConfirmDialog
+        open={confirmingLogout}
+        onClose={() => setConfirmingLogout(false)}
+        onConfirm={() => sessionActions.signOut()}
+        title="¿Cerrar sesión?"
+        description="Tu diario queda guardado en tu cuenta para cuando vuelvas."
+        confirmLabel="Cerrar sesión"
+      />
     </aside>
   );
 };
