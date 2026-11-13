@@ -215,7 +215,7 @@ Los pasos exactos de Supabase, Gemini, Google y el correo están en `supabase/RE
 - [x] **Réplica del día:** guardar `CRON_SECRET` como secreto y en Vault, con `project_url`. Sin esto, la réplica del día no se genera.
 - [ ] **Recorridos:** pegar `supabase/.temp/recorridos.sql` en el SQL Editor del proyecto. Hasta entonces, la web con Supabase muestra "No pudimos traer tu diario".
 - [x] **Google:** crear el cliente OAuth en Google Cloud para "Entrar con Google". Comprobado el 2 de noviembre en `localhost:5173`; falta agregar la dirección de Vercel en Google Cloud y en Supabase.
-- [ ] **Vercel:** crear la cuenta y conectarla al repositorio `Zstyles12/Proyecto-Replica` (Fase 18).
+- [x] **Vercel:** crear la cuenta y conectarla al repositorio `Zstyles12/Proyecto-Replica` (Fase 18). Publicada en https://proyecto-replica.vercel.app el 4 de noviembre.
 - [x] **Correo (obligatorio):** conectar un SMTP propio y, después, cambiar las plantillas de confirmación y recuperación para que traigan el código (`{{ .Token }}`), con 6 dígitos. En un proyecto gratuito nuevo, sin SMTP propio las plantillas no se pueden editar y el código no llega: nadie podría crear su cuenta con correo. Resend necesita un dominio verificado; sin dominio sirve Gmail con una contraseña de aplicación.
 - [ ] **Dispositivos:** probar en un Android real y en un iPhone o una Mac (Fase 18).
 
@@ -301,7 +301,7 @@ Hecho el 3 de noviembre, en modo simulado: exportar arma el archivo en el navega
 
 ### Fase 18 — Publicación y verificación (miércoles 4 a jueves 5)
 
-- [ ] Publicar en Vercel con HTTPS, cabeceras de seguridad y CSP. La configuración está lista y probada en local (`frontend/vercel.json`, `02-estructura.md`, "Publicación"); falta que la persona responsable cree el proyecto en Vercel.
+- [x] Publicar en Vercel con HTTPS, cabeceras de seguridad y CSP: https://proyecto-replica.vercel.app (commit `48d6669`, 4 de noviembre). Comprobado en vivo: `http` redirige a `https` (308), llegan la CSP y las cabeceras de `frontend/vercel.json`, los enlaces directos abren la web, el Service Worker se registra y la imagen del enlace compartido tiene su dirección completa. Desde la página, REST y Realtime (`wss`) llegan a Supabase sin ninguna violación de la CSP.
 - [x] Enlace compartido y manifiesto: `og-claro-1200x630.png`, descripción, `theme-color`, `icon-192`, `icon-512` e `icon-maskable-512` (`DESIGN-WEB.md` §9).
 - [x] Revisar los 61 requisitos y los 15 no funcionales uno por uno, con su resultado: [`05-requisitos.md`](05-requisitos.md).
 - [x] La lista WCAG y responsive de la lámina 5, con el contraste medido en claro y en oscuro.

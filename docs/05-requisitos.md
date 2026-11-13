@@ -143,10 +143,10 @@ El recorrido completo en la dirección pública (Fase 18, bloque 5) todavía no 
 | RNF-12 | Cumple | `dayKey` en hora local en todo el código; una nota de ayer a las 21:40 en Caracas cae en «Ayer» (Fase 1). |
 | RNF-13 | Cumple | IndexedDB, bandeja de notas pendientes y copia del diario (Fase 17, simulado). |
 | RNF-14 | Cumple | TypeScript estricto sin `any`, stores con `useSyncExternalStore`, colores con tokens y servicios con su versión real y simulada. `tsc` y `lint` pasan. |
-| RNF-15 | Falta comprobar | Las claves van en variables de entorno y secretos de Supabase. `vercel.json` trae HTTPS estricto (HSTS) y `upgrade-insecure-requests`. Se comprueba en la dirección pública. |
+| RNF-15 | Cumple | Las claves van en variables de entorno de Vercel y en secretos de Supabase; antes de subir se revisó que el repositorio no tenga ninguna. En https://proyecto-replica.vercel.app, `http` redirige a `https` (308), con HSTS de dos años y `upgrade-insecure-requests` (4-nov). |
 
 ## Recorrido en la dirección pública
 
-Pendiente: se hace cuando la web esté publicada en Vercel.
+Publicada el 4 de noviembre en https://proyecto-replica.vercel.app. Cabeceras, CSP, manifiesto y conexión con Supabase comprobados en vivo. El recorrido con las cuentas de prueba lo hace la persona responsable: pendiente de anotar aquí.
 
 El 4 de noviembre, después de los cambios de esta fase, `npm run accesos` y `npm run flujo` pasaron completos contra el proyecto real.
