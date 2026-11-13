@@ -78,7 +78,7 @@ export const mockAuthService: AuthService = {
     return {
       ok: true,
       account: {
-        email: 'ana.lucia@gmail.com',
+        email: 'ana.lucia@example.com',
         provider,
         name: 'Ana Lucía',
         existing: intent === 'entrar',
